@@ -1,0 +1,76 @@
+---
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  labels:
+    app.kubernetes.io/instance: ai-lab-recipes
+    app.kubernetes.io/name: ai-lab-recipes
+    operator.tekton.dev/operand-name: openshift-pipelines-addons
+    pipeline.openshift.io/strategy: docker
+    pipeline.openshift.io/type: kubernetes
+  name: cicdsystem-dockerfile-build
+  namespace: {{ ansible_operator_meta.namespace }}
+spec:
+  params:
+    - default: ai-lab-recipes
+      name: APP_NAME
+      type: string
+    - default: 'https://github.com/kenmoini/ai-lab-recipes'
+      name: GIT_REPO
+      type: string
+    - default: ''
+      name: GIT_REVISION
+      type: string
+    - default: 'image-registry.openshift-image-registry.svc:5000/{{ ansible_operator_meta.namespace }}/ai-lab-recipes'
+      name: IMAGE_NAME
+      type: string
+    - default: convert_models
+      name: PATH_CONTEXT
+      type: string
+    - name: DOCKERFILE
+      default: ./Containerfile
+      type: string
+  tasks:
+    - name: fetch-repository
+      params:
+        - name: url
+          value: $(params.GIT_REPO)
+        - name: revision
+          value: $(params.GIT_REVISION)
+        - name: subdirectory
+          value: ''
+        - name: deleteExisting
+          value: 'true'
+      taskRef:
+        kind: ClusterTask
+        name: git-clone
+      workspaces:
+        - name: output
+          workspace: workspace
+    - name: build
+      params:
+        - name: IMAGE
+          value: $(params.IMAGE_NAME)
+        - name: TLSVERIFY
+          value: 'false'
+        - name: CONTEXT
+          value: $(params.PATH_CONTEXT)
+      runAfter:
+        - fetch-repository
+      taskRef:
+        kind: ClusterTask
+        name: buildah
+      workspaces:
+        - name: source
+          workspace: workspace
+    - name: deploy
+      params:
+        - name: SCRIPT
+          value: oc rollout status deploy/$(params.APP_NAME)
+      runAfter:
+        - build
+      taskRef:
+        kind: ClusterTask
+        name: openshift-client
+  workspaces:
+    - name: workspace

@@ -31,4 +31,11 @@ resources:
   group: cicd
   kind: ImageRegistry
   version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  domain: kemo.dev
+  group: cicd
+  kind: GitRepo
+  version: v1alpha1
 version: "3"

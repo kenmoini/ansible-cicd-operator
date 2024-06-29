@@ -9,4 +9,12 @@ metadata:
     app.kubernetes.io/created-by: ansible-cicd-operator
   name: appdeployment-sample
 spec:
-  # TODO(user): Add fields here
+  source:
+    repoURL: https://github.com/kenmoini/ai-lab-recipes
+    branch: main
+    contextDir: convert_models
+  registry:
+    name: imageregistry-sample
+  target:
+    cluster: local-cluster
+    namespace: convert-models

@@ -5,4 +5,5 @@ resources:
 - bases/cicd.kemo.dev_cicdsystems.yaml
 - bases/cicd.kemo.dev_appdeployments.yaml
 - bases/cicd.kemo.dev_imageregistries.yaml
+- bases/cicd.kemo.dev_gitrepoes.yaml
 #+kubebuilder:scaffold:crdkustomizeresource

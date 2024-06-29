@@ -3,4 +3,5 @@ resources:
 - cicd_v1alpha1_cicdsystem.yaml
 - cicd_v1alpha1_appdeployment.yaml
 - cicd_v1alpha1_imageregistry.yaml
+- cicd_v1alpha1_gitrepo.yaml
 #+kubebuilder:scaffold:manifestskustomizesamples

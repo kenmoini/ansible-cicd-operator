@@ -88,4 +88,21 @@ rules:
       - patch
       - update
       - watch
+  ##
+  ## Rules for cicd.kemo.dev/v1alpha1, Kind: GitRepo
+  ##
+  - apiGroups:
+      - cicd.kemo.dev
+    resources:
+      - gitrepoes
+      - gitrepoes/status
+      - gitrepoes/finalizers
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
 #+kubebuilder:scaffold:rules

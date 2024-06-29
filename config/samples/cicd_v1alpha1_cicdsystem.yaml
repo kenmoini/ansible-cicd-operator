@@ -13,4 +13,9 @@ spec:
   pipelines:
     deploy_openshift_pipelines: true
     openshift_pipelines_channel: stable
+    create_templates: true
 
+  cd:
+    system_type: argocd # argocd or rhacm
+    deploy_operator: true
+    gitops_operator_channel: latest

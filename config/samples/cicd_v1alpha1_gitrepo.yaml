@@ -1,0 +1,16 @@
+apiVersion: cicd.kemo.dev/v1alpha1
+kind: GitRepo
+metadata:
+  labels:
+    app.kubernetes.io/name: gitrepo
+    app.kubernetes.io/instance: gitrepo-sample
+    app.kubernetes.io/part-of: ansible-cicd-operator
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: ansible-cicd-operator
+  name: gitrepo-sample
+spec:
+  # TODO(user): Add fields here
+  url: https://github.com/kenmoini/cicd-system-apps
+  branch: deploy
+  secretRef:
+    name: git-credentials
