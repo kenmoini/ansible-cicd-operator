@@ -1,0 +1,46 @@
+---
+# tasks file for CICDSystem
+
+- name: Deployment of the OpenShift Pipelines Operator
+  when: pipelines.deploy_openshift_pipelines
+  block:
+    - name: Check for the OpenShift Pipelines Subscription
+      kubernetes.core.k8s_info:
+        api_version: operators.coreos.com/v1alpha1
+        kind: Subscription
+        namespace: openshift-operators
+        name: openshift-pipelines-operator
+      register: openshift_pipelines_subscription
+
+    - name: Deploy the OpenShift Pipelines Operator if it does not exist
+      when: openshift_pipelines_subscription.resources | length == 0
+      kubernetes.core.k8s:
+        definition:
+          apiVersion: operators.coreos.com/v1alpha1
+          kind: Subscription
+          metadata:
+            name: openshift-pipelines-operator
+            namespace: openshift-operators
+            ownerReferences:
+              - apiVersion: cicd.kemo.dev/v1alpha1
+                kind: CICDSystem
+                name: "{{ ansible_operator_meta.name }}"
+                uid: "{{ ansible_operator_meta.uid }}"
+          spec:
+            channel: "{{ openshift_pipelines_channel }}"
+            name: openshift-pipelines-operator
+            source: redhat-operators
+            sourceNamespace: openshift-marketplace
+        state: present
+
+    - name: Wait for the OpenShift Pipelines Operator to be ready
+      kubernetes.core.k8s_info:
+        api_version: operators.coreos.com/v1alpha1
+        kind: ClusterServiceVersion
+        namespace: openshift-operators
+        label_selectors:
+          operators.coreos.com/openshift-pipelines-operator-rh.openshift-operators: ''
+      register: openshift_pipelines_csv
+      until: openshift_pipelines_csv.resources | length > 0
+      retries: 100
+      delay: 10

@@ -1,0 +1,14 @@
+apiVersion: cicd.kemo.dev/v1alpha1
+kind: ImageRegistry
+metadata:
+  labels:
+    app.kubernetes.io/name: imageregistry
+    app.kubernetes.io/instance: imageregistry-sample
+    app.kubernetes.io/part-of: ansible-cicd-operator
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: ansible-cicd-operator
+  name: imageregistry-sample
+spec:
+  secretReference:
+    name: image-registry-secret
+    namespace: cicd-system

@@ -1,0 +1,15 @@
+---
+# Use the 'create api' subcommand to add watches to this file.
+- version: v1alpha1
+  group: cicd.kemo.dev
+  kind: CICDSystem
+  role: cicdsystem
+- version: v1alpha1
+  group: cicd.kemo.dev
+  kind: AppDeployment
+  role: appdeployment
+- version: v1alpha1
+  group: cicd.kemo.dev
+  kind: ImageRegistry
+  role: imageregistry
+#+kubebuilder:scaffold:watch

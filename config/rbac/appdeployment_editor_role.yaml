@@ -1,0 +1,31 @@
+# permissions for end users to edit appdeployments.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/instance: appdeployment-editor-role
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: ansible-cicd-operator
+    app.kubernetes.io/part-of: ansible-cicd-operator
+    app.kubernetes.io/managed-by: kustomize
+  name: appdeployment-editor-role
+rules:
+- apiGroups:
+  - cicd.kemo.dev
+  resources:
+  - appdeployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cicd.kemo.dev
+  resources:
+  - appdeployments/status
+  verbs:
+  - get

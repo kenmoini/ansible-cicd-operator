@@ -1,0 +1,27 @@
+# permissions for end users to view imageregistries.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/instance: imageregistry-viewer-role
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: ansible-cicd-operator
+    app.kubernetes.io/part-of: ansible-cicd-operator
+    app.kubernetes.io/managed-by: kustomize
+  name: imageregistry-viewer-role
+rules:
+- apiGroups:
+  - cicd.kemo.dev
+  resources:
+  - imageregistries
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - cicd.kemo.dev
+  resources:
+  - imageregistries/status
+  verbs:
+  - get

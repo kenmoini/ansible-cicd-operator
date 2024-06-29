@@ -1,0 +1,91 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: manager-role
+rules:
+  ##
+  ## Base operator rules
+  ##
+  - apiGroups:
+      - ""
+    resources:
+      - secrets
+      - pods
+      - pods/exec
+      - pods/log
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - apps
+    resources:
+      - deployments
+      - daemonsets
+      - replicasets
+      - statefulsets
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  ##
+  ## Rules for cicd.kemo.dev/v1alpha1, Kind: CICDSystem
+  ##
+  - apiGroups:
+      - cicd.kemo.dev
+    resources:
+      - cicdsystems
+      - cicdsystems/status
+      - cicdsystems/finalizers
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  ##
+  ## Rules for cicd.kemo.dev/v1alpha1, Kind: AppDeployment
+  ##
+  - apiGroups:
+      - cicd.kemo.dev
+    resources:
+      - appdeployments
+      - appdeployments/status
+      - appdeployments/finalizers
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  ##
+  ## Rules for cicd.kemo.dev/v1alpha1, Kind: ImageRegistry
+  ##
+  - apiGroups:
+      - cicd.kemo.dev
+    resources:
+      - imageregistries
+      - imageregistries/status
+      - imageregistries/finalizers
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+#+kubebuilder:scaffold:rules
