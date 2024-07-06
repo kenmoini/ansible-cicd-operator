@@ -10,7 +10,8 @@ metadata:
   name: gitrepo-sample
 spec:
   # TODO(user): Add fields here
-  url: https://github.com/kenmoini/cicd-system-apps
+  url: git@github.com:kenmoini/cicd-system-apps.git
   branch: deploy
-  secretRef:
+  credentials:
     name: git-credentials
+    namespace: cicd-system

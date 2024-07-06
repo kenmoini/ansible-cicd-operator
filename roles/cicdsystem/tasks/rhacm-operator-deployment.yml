@@ -1,0 +1,122 @@
+---
+- name: Deploy the Red Hat Advanced Cluster Management Operator
+  when: cd.rhacm.enabled and cd.rhacm.deploy_operator
+  block:
+    - name: Check for the open-cluster-management namespace
+      kubernetes.core.k8s_info:
+        api_version: v1
+        kind: Namespace
+        name: open-cluster-management
+      register: rhacm_namespace
+
+    - name: Create namespaces if they do not exist
+      when: rhacm_namespace.resources | length == 0
+      kubernetes.core.k8s:
+        state: present
+        kind: Namespace
+        api_version: v1
+        merge_type:
+          - strategic-merge
+          - merge
+        definition:
+          metadata:
+            name: "{{ ns_item }}"
+            #labels:
+              #openshift.io/cluster-monitoring: 'true'
+          spec: {}
+      loop:
+        - open-cluster-management
+        - open-cluster-management-observability
+        - multicluster-engine
+        - hive
+        - assisted-installer
+      loop_control:
+        loop_var: ns_item
+
+    - name: Check for an OperatorGroup in the open-cluster-management namespace
+      kubernetes.core.k8s_info:
+        api_version: operators.coreos.com/v1
+        kind: OperatorGroup
+        namespace: open-cluster-management
+      register: rhacm_operatorgroups
+
+    - name: Create an OperatorGroup if one does not exist in the open-cluster-management namespace
+      when: rhacm_operatorgroups.resources | length == 0
+      kubernetes.core.k8s:
+        definition:
+          apiVersion: operators.coreos.com/v1
+          kind: OperatorGroup
+          metadata:
+            name: open-cluster-management
+            namespace: open-cluster-management
+            ownerReferences:
+              - apiVersion: cicd.kemo.dev/v1alpha1
+                kind: CICDSystem
+                name: "{{ ansible_operator_meta.name }}"
+                uid: "{{ ansible_operator_meta.uid }}"
+          spec:
+            targetNamespaces:
+              - open-cluster-management
+            upgradeStrategy: Default
+        state: present
+
+    - name: Check for the RHACM Subscription
+      kubernetes.core.k8s_info:
+        api_version: operators.coreos.com/v1alpha1
+        kind: Subscription
+        namespace: open-cluster-management
+        name: advanced-cluster-management
+      register: rhacm_subscription
+
+    - name: Create the RHACM Subscription if it does not exist
+      when: rhacm_subscription.resources | length == 0
+      kubernetes.core.k8s:
+        definition:
+          apiVersion: operators.coreos.com/v1alpha1
+          kind: Subscription
+          metadata:
+            name: advanced-cluster-management
+            namespace: open-cluster-management
+            ownerReferences:
+              - apiVersion: cicd.kemo.dev/v1alpha1
+                kind: CICDSystem
+                name: "{{ ansible_operator_meta.name }}"
+                uid: "{{ ansible_operator_meta.uid }}"
+          spec:
+            channel: "{{ cd.rhacm.rhacm_operator_channel }}"
+            installPlanApproval: "{{ cd.rhacm.operator_update_strategy }}"
+            name: advanced-cluster-management
+            source: redhat-operators
+            sourceNamespace: openshift-marketplace
+        state: present
+
+    - name: Wait for the Operator to come online
+      kubernetes.core.k8s_info:
+        api_version: apiextensions.k8s.io/v1
+        kind: CustomResourceDefinition
+        name: multiclusterhubs.operator.open-cluster-management.io
+      register: crd_check
+      retries: 200
+      delay: 10
+      until: crd_check.resources | list | length == 1
+
+    - name: Check for an existing MultiClusterHub CR
+      kubernetes.core.k8s_info:
+        api_version: operator.open-cluster-management.io/v1
+        kind: MultiClusterHub
+        namespace: open-cluster-management
+        name: multiclusterhub
+      register: mch_check
+
+    - name: Create a MultiClusterHub CR if one does not exist
+      when: mch_check.resources | length == 0
+      kubernetes.core.k8s:
+        state: present
+        merge_type:
+          - strategic-merge
+          - merge
+        definition: "{{ lookup('template', 'templates/multiclusterhub.yml.j2') | from_yaml }}"
+      register: k8s_run
+      until: k8s_run is not failed
+      delay: 10
+      retries: 3

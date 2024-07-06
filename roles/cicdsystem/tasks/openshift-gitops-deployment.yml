@@ -1,0 +1,76 @@
+---
+- name: Deploy the OpenShift GitOps Operator
+  when: cd.argocd.enabled and cd.argocd.deploy_operator
+  block:
+
+    - name: Check for the openshift-gitops-operator namespace
+      kubernetes.core.k8s_info:
+        api_version: v1
+        kind: Namespace
+        name: openshift-gitops-operator
+      register: openshift_gitops_namespace
+
+    - name: Create the openshift-gitops-operator namespace if it does not exist
+      when: openshift_gitops_namespace.resources | length == 0
+      kubernetes.core.k8s:
+        definition:
+          apiVersion: v1
+          kind: Namespace
+          metadata:
+            name: openshift-gitops-operator
+        state: present
+
+    - name: Check for an OperatorGroup in the openshift-gitops-operator namespace
+      kubernetes.core.k8s_info:
+        api_version: operators.coreos.com/v1
+        kind: OperatorGroup
+        namespace: openshift-gitops-operator
+      register: openshift_gitops_operatorgroups
+
+    - name: Create an OperatorGroup if one does not exist in the openshift-gitops-operator namespace
+      when: openshift_gitops_operatorgroups.resources | length == 0
+      kubernetes.core.k8s:
+        definition:
+          apiVersion: operators.coreos.com/v1
+          kind: OperatorGroup
+          metadata:
+            name: openshift-gitops-operator
+            namespace: openshift-gitops-operator
+            ownerReferences:
+              - apiVersion: cicd.kemo.dev/v1alpha1
+                kind: CICDSystem
+                name: "{{ ansible_operator_meta.name }}"
+                uid: "{{ ansible_operator_meta.uid }}"
+          spec:
+            upgradeStrategy: Default
+        state: present
+
+    - name: Check for the OpenShift GitOps Subscription
+      kubernetes.core.k8s_info:
+        api_version: operators.coreos.com/v1alpha1
+        kind: Subscription
+        namespace: openshift-gitops-operator
+        name: openshift-gitops-operator
+      register: openshift_gitops_subscription
+
+    - name: Create the OpenShift GitOps Subscription if it does not exist
+      when: openshift_gitops_subscription.resources | length == 0
+      kubernetes.core.k8s:
+        definition:
+          apiVersion: operators.coreos.com/v1alpha1
+          kind: Subscription
+          metadata:
+            name: openshift-gitops-operator
+            namespace: openshift-operators
+            ownerReferences:
+              - apiVersion: cicd.kemo.dev/v1alpha1
+                kind: CICDSystem
+                name: "{{ ansible_operator_meta.name }}"
+                uid: "{{ ansible_operator_meta.uid }}"
+          spec:
+            channel: "{{ cd.argocd.gitops_operator_channel }}"
+            installPlanApproval: "{{ cd.argocd.operator_update_strategy }}"
+            name: openshift-gitops-operator
+            source: redhat-operators
+            sourceNamespace: openshift-marketplace
+        state: present

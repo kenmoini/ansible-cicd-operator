@@ -1,0 +1,51 @@
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  annotations:
+    chains.tekton.dev/signed: 'true'
+    pipeline.openshift.io/started-by: appDeployment
+  generateName: ai-lab-recipes-
+  namespace: sdxl
+  finalizers:
+    - chains.tekton.dev/pipelinerun
+  labels:
+    app.kubernetes.io/instance: ai-lab-recipes
+    app.kubernetes.io/name: ai-lab-recipes
+    operator.tekton.dev/operand-name: openshift-pipelines-addons
+    pipeline.openshift.io/strategy: docker
+    pipeline.openshift.io/type: kubernetes
+    tekton.dev/pipeline: ai-lab-recipes
+spec:
+  params:
+    - name: APP_NAME
+      value: ai-lab-recipes
+    - name: GIT_REPO
+      value: 'https://github.com/kenmoini/ai-lab-recipes'
+    - name: GIT_REVISION
+      value: ''
+    - name: IMAGE_NAME
+      value: 'image-registry.openshift-image-registry.svc:5000/sdxl/ai-lab-recipes'
+    - name: PATH_CONTEXT
+      value: convert_models
+    - name: DOCKERFILE
+      value: ./Containerfile.uisvc
+  pipelineRef:
+    name: ai-lab-recipes
+  taskRunTemplate:
+    serviceAccountName: pipeline
+  timeouts:
+    pipeline: 1h0m0s
+  workspaces:
+    - name: workspace
+      volumeClaimTemplate:
+        metadata:
+          creationTimestamp: null
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 1Gi
+          storageClassName: lvms-vg1-immediate
+          volumeMode: Filesystem
+        status: {}

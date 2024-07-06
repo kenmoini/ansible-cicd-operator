@@ -13,8 +13,26 @@ spec:
     repoURL: https://github.com/kenmoini/ai-lab-recipes
     branch: main
     contextDir: convert_models
+  build:
+    strategy: docker
+    dockerfile: Containerfile.uisvc
+    deployment_type: Deployment # Deployment or StatefulSet
+  # create_networking will create a Service and Route for the application
+  # service will expose any port defined in the Dockerfile
+  # route will create a Route for the application
+  # hostname will set the hostname for the Route - auto will use the default wildcard ingress
+  create_networking:
+    service: true
+    route: true
+    hostname: auto
   registry:
-    name: imageregistry-sample
+    name: imageregistry-sample # The name of the ImageRegistry resource
   target:
-    cluster: local-cluster
+    cluster:
+      # name and labelSelector are mutually exclusive - only one should be defined
+      name: local-cluster # Must be a cluster name found in ArgoCD/RHACM
+      #labelSelector:
+      #  matchLabels:
+      #    vendor: OpenShift
     namespace: convert-models
+    repo: cicd-system-apps # The name of the GitRepo resource

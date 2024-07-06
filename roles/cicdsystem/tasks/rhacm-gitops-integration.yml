@@ -1,0 +1,100 @@
+---
+- name: Ensure that the ArgoCD CRD exists
+  kubernetes.core.k8s_info:
+    api_version: apiextensions.k8s.io/v1
+    kind: CustomResourceDefinition
+    name: argocds.argoproj.io
+  register: argocd_crd_check
+  retries: 200
+  delay: 10
+  until: argocd_crd_check.resources | list | length == 1
+
+- name: Ensure that the RHACM GitOpsCluster CRD exists
+  kubernetes.core.k8s_info:
+    api_version: apiextensions.k8s.io/v1
+    kind: CustomResourceDefinition
+    name: gitopsclusters.apps.open-cluster-management.io
+  register: gitopscluster_crd_check
+  retries: 200
+  delay: 10
+  until: gitopscluster_crd_check.resources | list | length == 1
+
+- name: Ensure that the RHACM ManagedClusterSetBinding CRD exists
+  kubernetes.core.k8s_info:
+    api_version: apiextensions.k8s.io/v1
+    kind: CustomResourceDefinition
+    name: managedclustersetbindings.cluster.open-cluster-management.io
+  register: mcsb_crd_check
+  retries: 200
+  delay: 10
+  until: mcsb_crd_check.resources | list | length == 1
+
+- name: Ensure that the RHACM Placement CRD exists
+  kubernetes.core.k8s_info:
+    api_version: apiextensions.k8s.io/v1
+    kind: CustomResourceDefinition
+    name: placements.cluster.open-cluster-management.io
+  register: placement_crd_check
+  retries: 200
+  delay: 10
+  until: placement_crd_check.resources | list | length == 1
+
+- name: Check for an existing ManagedClusterSetBinding in the openshift-gitops namespace
+  kubernetes.core.k8s_info:
+    api_version: cluster.open-cluster-management.io/v1beta2
+    kind: ManagedClusterSetBinding
+    namespace: openshift-gitops
+  register: mcsb_check
+
+- name: Create the ManagedClusterSetBinding if it does not exist
+  when: mcsb_check.resources | length == 0
+  kubernetes.core.k8s:
+    state: present
+    merge_type:
+      - strategic-merge
+      - merge
+    definition: "{{ lookup('template', 'templates/managedclustersetbinding.yml.j2') | from_yaml }}"
+  register: k8s_run
+  until: k8s_run is not failed
+  delay: 10
+  retries: 3
+
+- name: Check for an existing GitOpsCluster CR in the openshift-gitops namespace
+  kubernetes.core.k8s_info:
+    api_version: cluster.open-cluster-management.io/v1beta1
+    kind: GitOpsCluster
+    namespace: openshift-gitops
+  register: gitopscluster_check
+
+- name: Create the GitOpsCluster if it does not exist
+  when: gitopscluster_check.resources | length == 0
+  kubernetes.core.k8s:
+    state: present
+    merge_type:
+      - strategic-merge
+      - merge
+    definition: "{{ lookup('template', 'templates/gitopscluster.yml.j2') | from_yaml }}"
+  register: k8s_run
+  until: k8s_run is not failed
+  delay: 10
+  retries: 3
+
+- name: Check for an existing Placement CR in the openshift-gitops namespace
+  kubernetes.core.k8s_info:
+    api_version: cluster.open-cluster-management.io/v1beta1
+    kind: Placement
+    namespace: openshift-gitops
+  register: placement_check
+
+- name: Create the Placement if it does not exist
+  when: placement_check.resources | length == 0
+  kubernetes.core.k8s:
+    state: present
+    merge_type:
+      - strategic-merge
+      - merge
+    definition: "{{ lookup('template', 'templates/placement.yml.j2') | from_yaml }}"
+  register: k8s_run
+  until: k8s_run is not failed
+  delay: 10
+  retries: 3

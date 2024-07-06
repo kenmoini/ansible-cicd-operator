@@ -4,6 +4,13 @@
   group: cicd.kemo.dev
   kind: CICDSystem
   role: cicdsystem
+  blacklist:
+    - group: operators.coreos.com
+      version: v1alpha1
+      kind: Subscription
+    - group: operators.coreos.com
+      version: v1
+      kind: OperatorGroup
 - version: v1alpha1
   group: cicd.kemo.dev
   kind: AppDeployment
@@ -16,4 +23,5 @@
   group: cicd.kemo.dev
   kind: GitRepo
   role: gitrepo
+  #manageStatus: false
 #+kubebuilder:scaffold:watch

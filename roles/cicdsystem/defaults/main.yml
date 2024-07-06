@@ -5,6 +5,15 @@ pipelines:
   openshift_pipelines_channel: stable
 
 cd:
-  deploy_operator: true
-  system_type: argocd # argocd or rhacm
-  gitops_operator_channel: latest
+  rhacm:
+    enabled: true
+    deploy_operator: true
+    rhacm_operator_channel: release-2.10
+    operator_update_strategy: Automatic # Automatic or Manual
+    enable_observability: true
+  argocd:
+    enabled: true
+    deploy_operator: true
+    gitops_operator_channel: latest
+    operator_update_strategy: Automatic # Automatic or Manual
+  system_type: argocd # argocd or rhacm - this defines what kind of Application artifacts are created
