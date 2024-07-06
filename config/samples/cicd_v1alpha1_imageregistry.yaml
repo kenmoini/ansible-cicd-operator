@@ -9,6 +9,6 @@ metadata:
     app.kubernetes.io/created-by: ansible-cicd-operator
   name: imageregistry-sample
 spec:
-  secretReference:
+  credentials:
     name: image-registry-secret
     namespace: cicd-system

@@ -1,2 +1,89 @@
 ---
 # tasks file for ImageRegistry
+
+- name: Check the contents of the ImageRegistry CR
+  block:
+    - name: Ensure that all the needed variables are defined
+      ansible.builtin.assert:
+        that:
+          - credentials is defined
+          - credentials.name is defined
+          - credentials.namespace is defined
+        fail_msg: "One or more of the required variables are not defined:{{ ' credentials.name' if not credentials.name is defined else '' }}{{ ' credentials.namespace' if not credentials.namespace is defined else '' }}"
+        success_msg: "All the required variables are defined"
+
+  rescue:
+    - name: Failed to find all the needed variables
+      operator_sdk.util.k8s_status:
+        api_version: cicd.kemo.dev/v1alpha1
+        kind: ImageRegistry
+        name: "{{ ansible_operator_meta.name }}"
+        namespace: "{{ ansible_operator_meta.namespace }}"
+        conditions:
+        - type: Succeeded
+          status: "False"
+          reason: ImageRegistryConfigError
+          message: "One or more of the required variables are not defined:{{ ' credentials.name' if not credentials.name is defined else '' }}{{ ' credentials.namespace' if not credentials.namespace is defined else '' }}"
+          lastTransitionTime: "{{ lookup('pipe', 'date --rfc-3339 seconds') }}"
+    - ansible.builtin.fail:
+        msg: "One or more of the required variables are not defined:{{ ' credentials.name' if not credentials.name is defined else '' }}{{ ' credentials.namespace' if not credentials.namespace is defined else '' }}"
+
+- name: Check for the Secret
+  block:
+    - name: Check for the existence of the secret
+      kubernetes.core.k8s_info:
+        kind: Secret
+        namespace: "{{ credentials.namespace }}"
+        name: "{{ credentials.name }}"
+      register: secret_info
+
+    - name: Fail if the Secret was not found
+      ansible.builtin.assert:
+        that:
+          - secret_info.resources | length > 0
+        fail_msg: "The Secret '{{ credentials.name }}' was not found in the '{{ credentials.namespace }}' namespace"
+        success_msg: "The Secret '{{ credentials.name }}' was found in the '{{ credentials.namespace }}' namespace"
+
+  rescue:
+    - name: Failed to find the Secret
+      operator_sdk.util.k8s_status:
+        api_version: cicd.kemo.dev/v1alpha1
+        kind: ImageRegistry
+        name: "{{ ansible_operator_meta.name }}"
+        namespace: "{{ ansible_operator_meta.namespace }}"
+        conditions:
+        - type: Succeeded
+          status: "False"
+          reason: SecretNotFound
+          message: "The Secret '{{ credentials.name }}' was not found in the '{{ credentials.namespace }}' namespace"
+          lastTransitionTime: "{{ lookup('pipe', 'date --rfc-3339 seconds') }}"
+    - ansible.builtin.fail:
+        msg: "The Secret '{{ credentials.name }}' was not found in the '{{ credentials.namespace }}' namespace"
+
+- name: Check the Secret for the needed keys - this should be a kubernetes.io/dockerconfigjson or kubernetes.io/dockercfg type secret
+  block:
+  - name: Ensure the Secret has the needed keys
+    ansible.builtin.assert:
+      that:
+        - secret_info.resources[0].data is defined
+        - secret_info.resources[0].type == 'kubernetes.io/dockerconfigjson' or secret_info.resources[0].type == 'kubernetes.io/dockercfg'
+        - secret_info.resources[0].data['.dockercfg'] is defined or secret_info.resources[0].data['.dockerconfigjson'] is defined
+      fail_msg: "The Secret '{{ credentials.name }}' does not have the needed type/keys - this should be a kubernetes.io/dockerconfigjson or kubernetes.io/dockercfg type secret"
+      success_msg: "The Secret '{{ credentials.name }}' is the right type and has the needed keys"
+
+  rescue:
+    - name: Failed to find the needed type/keys in the Secret
+      operator_sdk.util.k8s_status:
+        api_version: cicd.kemo.dev/v1alpha1
+        kind: ImageRegistry
+        name: "{{ ansible_operator_meta.name }}"
+        namespace: "{{ ansible_operator_meta.namespace }}"
+        conditions:
+        - type: Succeeded
+          status: "False"
+          reason: InvalidSecret
+          message: "The Secret '{{ credentials.name }}' does not have the needed type/keys - this should be a kubernetes.io/dockerconfigjson or kubernetes.io/dockercfg type secret"
+          lastTransitionTime: "{{ lookup('pipe', 'date --rfc-3339 seconds') }}"
+    - ansible.builtin.fail:
+        msg: "The Secret '{{ credentials.name }}' does not have the needed type/keys - this should be a kubernetes.io/dockerconfigjson or kubernetes.io/dockercfg type secret"
+
