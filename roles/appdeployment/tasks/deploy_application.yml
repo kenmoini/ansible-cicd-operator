@@ -19,7 +19,7 @@
           kubernetes.core.k8s_info:
             api_version: argoproj.io/v1alpha1
             kind: Application
-            namespace: "{{ _cicd_kemo_dev_appdeployment_spec.target.cluster.namespace }}"
+            namespace: openshift-gitops
             name: "{{ _cicd_kemo_dev_appdeployment_spec.target.cluster.name }}"
           register: argocd_application_info
 
@@ -35,6 +35,6 @@
           kubernetes.core.k8s_info:
             api_version: argoproj.io/v1alpha1
             kind: ApplicationSet
-            namespace: "{{ _cicd_kemo_dev_appdeployment_spec.target.cluster.namespace }}"
+            namespace: openshift-gitops
             name: "{{ _cicd_kemo_dev_appdeployment_spec.target.cluster.labelSelector }}"
           register: argocd_applicationset_info
