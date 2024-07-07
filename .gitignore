@@ -12,3 +12,6 @@ bin
 *.swp
 *.swo
 *~
+
+.vscode/
+.vscode/**
