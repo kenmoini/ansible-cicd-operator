@@ -8,6 +8,7 @@
   group: cicd.kemo.dev
   kind: AppDeployment
   role: appdeployment
+  watchDependentResources: False
   #manageStatus: False
 - version: v1alpha1
   group: cicd.kemo.dev
