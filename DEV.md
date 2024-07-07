@@ -19,11 +19,13 @@
 - Create the Spec for the image registry in `config/samples/cicd_v1alpha1_imageregistry.yaml`
 - Create the Spec for the Git repo in `config/samples/cicd_v1alpha1_gitrepo.yaml`
 - Create the Spec for the application deployment in `config/samples/cicd_v1alpha1_appdeployment.yaml`
+
 - Set the default variables for the core system in `roles/cicdsystem/defaults/main.yml`
 - Create the tasks for the core system in `roles/cicdsystem/tasks/main.yml`
 - Log into an OpenShift cluster with the CLI
 - Test the operator so far by running it outside the cluster with `make install run`
 - You may uninstall the operator after testing by running `make uninstall` - make sure to delete any created CICDSystem, ImageRegistry, GitRepo, and AppDeployment CRs first!
+
 - Create a test namespace: `oc new-project cicd-system`
 - Create the CICDSystem defined in `oc apply -f config/samples/cicd_v1alpha1_cicdsystem.yaml`
 
