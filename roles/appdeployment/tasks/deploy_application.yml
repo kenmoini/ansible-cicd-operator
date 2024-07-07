@@ -2,6 +2,11 @@
 - name: Deploy application - ArgoCD
   when: cicd_system_info.resources[0].spec.cd.system_type == "argocd"
   block:
+    - name: Create the ArgoCD Repository Secret
+      kubernetes.core.k8s:
+        definition: "{{ lookup('template', 'argocd-repo-secret.yml.j2') }}"
+        state: present
+
     - name: ArgoCD Application
       when: _cicd_kemo_dev_appdeployment_spec.target.cluster.name is defined
       block:
