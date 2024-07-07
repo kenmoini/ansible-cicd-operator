@@ -34,6 +34,16 @@
             kind: PipelineRun
             namespace: "{{ ansible_operator_meta.namespace }}"
             name: "{{ created_pipelinerun.result.metadata.name }}"
+          register: check_pipelinerun_info
+          until: check_pipelinerun_info.resources[0].status.completionTime is defined
+          retries: 200
+          delay: 30
+
+        - name: Get the PipelineRun again
+          kubernetes.core.k8s_info:
+            kind: PipelineRun
+            namespace: "{{ ansible_operator_meta.namespace }}"
+            name: "{{ created_pipelinerun.result.metadata.name }}"
           register: pipelinerun_info
           until: pipelinerun_info.resources[0].status.completionTime is defined
           retries: 200

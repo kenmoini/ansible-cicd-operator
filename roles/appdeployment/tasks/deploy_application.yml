@@ -1,15 +1,35 @@
 ---
 - name: Deploy application - ArgoCD
-  when: cicd_system_info.resources[0].spec.cd.system_type }} == "argocd"
+  when: cicd_system_info.resources[0].spec.cd.system_type == "argocd"
   block:
-    - name: Create ArgoCD Application
+    - name: ArgoCD Application
       when: _cicd_kemo_dev_appdeployment_spec.target.cluster.name is defined
-      kubernetes.core.k8s:
-        definition: "{{ lookup('template', 'argocd-application.yml.j2') }}"
-        state: present
+      block:
+        - name: Create ArgoCD Application
+          kubernetes.core.k8s:
+            definition: "{{ lookup('template', 'argocd-application.yml.j2') }}"
+            state: present
 
-    - name: Create ArgoCD ApplicationSet
+        - name: Get the status of the ArgoCD Application
+          kubernetes.core.k8s_info:
+            api_version: argoproj.io/v1alpha1
+            kind: Application
+            namespace: "{{ _cicd_kemo_dev_appdeployment_spec.target.cluster.namespace }}"
+            name: "{{ _cicd_kemo_dev_appdeployment_spec.target.cluster.name }}"
+          register: argocd_application_info
+
+    - name: ArgoCD ApplicationSet
       when: _cicd_kemo_dev_appdeployment_spec.target.cluster.labelSelector is defined
-      kubernetes.core.k8s:
-        definition: "{{ lookup('template', 'argocd-applicationset.yml.j2') }}"
-        state: present
+      block:
+        - name: Create ArgoCD ApplicationSet
+          kubernetes.core.k8s:
+            definition: "{{ lookup('template', 'argocd-applicationset.yml.j2') }}"
+            state: present
+
+        - name: Get the status of the ArgoCD ApplicationSet
+          kubernetes.core.k8s_info:
+            api_version: argoproj.io/v1alpha1
+            kind: ApplicationSet
+            namespace: "{{ _cicd_kemo_dev_appdeployment_spec.target.cluster.namespace }}"
+            name: "{{ _cicd_kemo_dev_appdeployment_spec.target.cluster.labelSelector }}"
+          register: argocd_applicationset_info
