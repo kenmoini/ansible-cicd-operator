@@ -1,0 +1,45 @@
+{% if _cicd_kemo_dev_appdeployment.spec.registry.imageName is defined %}
+{% set imageName = _cicd_kemo_dev_appdeployment.spec.registry.imageName %}
+{% else %}
+{% set imageName = _cicd_kemo_dev_appdeployment.metadata.name %}
+{% endif %}
+
+{% if image_registry_secret_info.resources[0].data['.dockerconfigjson'] is defined %}
+{% set repoTargetJSON = image_registry_secret_info.resources[0].data['.dockerconfigjson'] | b64decode %}
+{% endif %}
+{% if image_registry_secret_info.resources[0].data['.dockercfg'] is defined %}
+{% set repoTargetJSON = image_registry_secret_info.resources[0].data['.dockercfg'] | b64decode %}
+{% endif %}
+{% set repoTarget = lookup('ansible.builtin.dict', (repoTargetJSON | from_json).auths).key %}
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ _cicd_kemo_dev_appdeployment.metadata.name }}
+  #namespace: {{ _cicd_kemo_dev_appdeployment.target.namespace }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "5"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ _cicd_kemo_dev_appdeployment.metadata.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ _cicd_kemo_dev_appdeployment.metadata.name }}
+    spec:
+      containers:
+        - name: {{ _cicd_kemo_dev_appdeployment.metadata.name }}
+          image: '{{ repoTarget }}/{{ _cicd_kemo_dev_appdeployment.spec.registry.path }}/{{ imageName }}'
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+          resources: {}
+          imagePullPolicy: Always
+      restartPolicy: Always
+  strategy:
+    type: Recreate
+  revisionHistoryLimit: 3
+  progressDeadlineSeconds: 600

@@ -1,0 +1,16 @@
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: {{ _cicd_kemo_dev_appdeployment.metadata.name }}
+  # namespace: {{ _cicd_kemo_dev_appdeployment.target.namespace }}
+spec:
+  to:
+    kind: Service
+    name: {{ _cicd_kemo_dev_appdeployment.metadata.name }}
+    weight: 100
+  port:
+    targetPort: "8080-tcp"
+  tls:
+    termination: edge
+  wildcardPolicy: None

@@ -1,0 +1,39 @@
+---
+
+- name: Get the cluster CICDSystem CR
+  kubernetes.core.k8s_info:
+    api_version: cicd.kemo.dev/v1alpha1
+    kind: CICDSystem
+  register: cicd_system_info
+
+- name: Get the defined source GitRepo CR
+  kubernetes.core.k8s_info:
+    api_version: cicd.kemo.dev/v1alpha1
+    kind: GitRepo
+    namespace: "{{ _cicd_kemo_dev_appdeployment.spec.sourceRepository.gitRepo.namespace }}"
+    name: "{{ _cicd_kemo_dev_appdeployment.spec.sourceRepository.gitRepo.name }}"
+  register: source_gitrepo_info
+
+- name: Get the defined ImageRegistry CR
+  kubernetes.core.k8s_info:
+    api_version: cicd.kemo.dev/v1alpha1
+    kind: ImageRegistry
+    namespace: "{{ _cicd_kemo_dev_appdeployment.spec.registry.namespace }}"
+    name: "{{ _cicd_kemo_dev_appdeployment.spec.registry.name }}"
+  register: image_registry_info
+
+- name: Get the ImageRegistry Secret
+  kubernetes.core.k8s_info:
+    api_version: v1
+    kind: Secret
+    namespace: "{{ image_registry_info.resources[0].spec.credentials.namespace }}"
+    name: "{{ image_registry_info.resources[0].spec.credentials.name }}"
+  register: image_registry_secret_info
+
+- name: Get the defined target GitRepo CR
+  kubernetes.core.k8s_info:
+    api_version: cicd.kemo.dev/v1alpha1
+    kind: GitRepo
+    namespace: "{{ _cicd_kemo_dev_appdeployment.spec.target.gitRepo.namespace }}"
+    name: "{{ _cicd_kemo_dev_appdeployment.spec.target.gitRepo.name }}"
+  register: target_gitrepo_info

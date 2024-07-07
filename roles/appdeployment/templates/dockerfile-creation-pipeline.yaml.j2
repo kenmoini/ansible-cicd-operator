@@ -1,34 +1,47 @@
+{% if _cicd_kemo_dev_appdeployment_spec.registry.imageName is defined %}
+{% set imageName = _cicd_kemo_dev_appdeployment_spec.registry.imageName %}
+{% else %}
+{% set imageName = _cicd_kemo_dev_appdeployment.metadata.name %}
+{% endif %}
+
+{% if image_registry_secret_info.resources[0].data['.dockerconfigjson'] is defined %}
+{% set repoTargetJSON = image_registry_secret_info.resources[0].data['.dockerconfigjson'] | b64decode %}
+{% endif %}
+{% if image_registry_secret_info.resources[0].data['.dockercfg'] is defined %}
+{% set repoTargetJSON = image_registry_secret_info.resources[0].data['.dockercfg'] | b64decode %}
+{% endif %}
+{% set repoTarget = lookup('ansible.builtin.dict', (repoTargetJSON | from_json).auths).key %}
+
 ---
 apiVersion: tekton.dev/v1beta1
 kind: Pipeline
 metadata:
   labels:
-    app.kubernetes.io/instance: ai-lab-recipes
-    app.kubernetes.io/name: ai-lab-recipes
-    operator.tekton.dev/operand-name: openshift-pipelines-addons
+    app.kubernetes.io/instance: {{ _cicd_kemo_dev_appdeployment.metadata.name }}
+    app.kubernetes.io/name: {{ _cicd_kemo_dev_appdeployment.metadata.name }}
     pipeline.openshift.io/strategy: docker
     pipeline.openshift.io/type: kubernetes
-  name: cicdsystem-dockerfile-build
+  name: {{ _cicd_kemo_dev_appdeployment.metadata.name }}
   namespace: {{ ansible_operator_meta.namespace }}
 spec:
   params:
-    - default: ai-lab-recipes
+    - default: {{ _cicd_kemo_dev_appdeployment.metadata.name }}
       name: APP_NAME
       type: string
-    - default: 'https://github.com/kenmoini/ai-lab-recipes'
+    - default: '{{ source_gitrepo_info.resources[0].spec.url }}'
       name: GIT_REPO
       type: string
-    - default: ''
+    - default: '{{ source_gitrepo_info.resources.spec.branch }}'
       name: GIT_REVISION
       type: string
-    - default: 'image-registry.openshift-image-registry.svc:5000/{{ ansible_operator_meta.namespace }}/ai-lab-recipes'
+    - default: '{{ repoTarget }}/{{ _cicd_kemo_dev_appdeployment_spec.registry.path }}/{{ imageName }}'
       name: IMAGE_NAME
       type: string
-    - default: convert_models
+    - default: {{ _cicd_kemo_dev_appdeployment_spec.sourceRepository.contextDir }}
       name: PATH_CONTEXT
       type: string
     - name: DOCKERFILE
-      default: ./Containerfile
+      default: {{ _cicd_kemo_dev_appdeployment_spec.build.dockerfile }}
       type: string
   tasks:
     - name: fetch-repository
@@ -55,29 +68,31 @@ spec:
           value: 'false'
         - name: CONTEXT
           value: $(params.PATH_CONTEXT)
+        - name: DOCKERFILE
+          value: $(params.DOCKERFILE)
       runAfter:
         - fetch-repository
       taskRef:
         kind: ClusterTask
-        name: buildah
+        #name: buildah
+        name: buildah-multi-tag
       workspaces:
         - name: source
           workspace: workspace
-    - name: deploy
-      params:
-        - name: SCRIPT
-          value: oc rollout status deploy/$(params.APP_NAME)
-      runAfter:
-        - build
-      taskRef:
-        kind: ClusterTask
-        name: openshift-client
+        - name: dockerconfig
+          workspace: dockerconfig
+#    - name: deploy
+#      params:
+#        - name: SCRIPT
+#          value: oc rollout status deploy/$(params.APP_NAME)
+#      runAfter:
+#        - build
+#      taskRef:
+#        kind: ClusterTask
+#        name: openshift-client
   workspaces:
     - name: workspace
-      volumeClaimTemplate:
-        spec:
-          accessModes:
-            - ReadWriteOnce
-          resources:
-            requests:
-              storage: 1Gi
+    - name: dockerconfig
+      optional: true
+    - name: target
+      optional: true
