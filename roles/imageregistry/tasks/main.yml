@@ -20,7 +20,7 @@
         name: "{{ ansible_operator_meta.name }}"
         namespace: "{{ ansible_operator_meta.namespace }}"
         conditions:
-        - type: Succeeded
+        - type: Validated
           status: "False"
           reason: ImageRegistryConfigError
           message: "One or more of the required variables are not defined:{{ ' credentials.name' if not credentials.name is defined else '' }}{{ ' credentials.namespace' if not credentials.namespace is defined else '' }}"
@@ -52,7 +52,7 @@
         name: "{{ ansible_operator_meta.name }}"
         namespace: "{{ ansible_operator_meta.namespace }}"
         conditions:
-        - type: Succeeded
+        - type: Validated
           status: "False"
           reason: SecretNotFound
           message: "The Secret '{{ credentials.name }}' was not found in the '{{ credentials.namespace }}' namespace"
@@ -79,7 +79,7 @@
         name: "{{ ansible_operator_meta.name }}"
         namespace: "{{ ansible_operator_meta.namespace }}"
         conditions:
-        - type: Succeeded
+        - type: Validated
           status: "False"
           reason: InvalidSecret
           message: "The Secret '{{ credentials.name }}' does not have the needed type/keys - this should be a kubernetes.io/dockerconfigjson or kubernetes.io/dockercfg type secret"
@@ -94,7 +94,7 @@
     name: "{{ ansible_operator_meta.name }}"
     namespace: "{{ ansible_operator_meta.namespace }}"
     conditions:
-    - type: Succeeded
+    - type: Validated
       status: "True"
       reason: ImageRegistryReady
       message: "The Secret '{{ credentials.name }}' was found in the '{{ credentials.namespace }}' namespace and has the needed type/keys"
