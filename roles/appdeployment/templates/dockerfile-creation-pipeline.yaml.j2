@@ -49,6 +49,18 @@ spec:
     - name: DOCKERFILE
       default: {{ _cicd_kemo_dev_appdeployment_spec.build.dockerfile }}
       type: string
+    - default: '{{ target_gitrepo_info.resources[0].spec.url }}'
+      name: TARGET_GIT_REPO
+      type: string
+    - default: '{{ target_gitrepo_info.resources[0].spec.branch }}'
+      name: TARGET_GIT_REVISION
+      type: string
+    - name: GIT_USER_EMAIL
+      default: cicd-system@kemo.dev
+      type: string
+    - name: GIT_USER_NAME
+      default: CICDSystemBot
+      type: string
   tasks:
     - name: fetch-repository
       params:
@@ -91,15 +103,45 @@ spec:
           workspace: workspace
         - name: dockerconfig
           workspace: dockerconfig
-#    - name: deploy
-#      params:
-#        - name: SCRIPT
-#          value: oc rollout status deploy/$(params.APP_NAME)
-#      runAfter:
-#        - build
-#      taskRef:
-#        kind: ClusterTask
-#        name: openshift-client
+    - name: push-manifests
+      runAfter:
+        - build
+      taskRef:
+        kind: ClusterTask
+        name: git-cli
+      params:
+        - name: GIT_USER_EMAIL
+          value: $(params.GIT_USER_EMAIL)
+        - name: GIT_USER_NAME
+          value: $(params.GIT_USER_NAME)
+        - name: APP_NAME
+          value: $(params.APP_NAME)
+        - name: TARGET_GIT_REVISION
+          value: $(params.TARGET_GIT_REVISION)
+        - name: TARGET_GIT_REPO
+          value: $(params.TARGET_GIT_REPO)
+        - name: PARAM_VERBOSE
+          value: "true"
+        - name: GIT_SCRIPT
+          value: |
+            echo "" >> ${PARAM_USER_HOME}/.ssh/id_rsa
+            GIT_SSH_COMMAND="ssh -i ${PARAM_USER_HOME}/.ssh/id_rsa -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no" git clone -b $(params.TARGET_GIT_REVISION) --single-branch $(params.TARGET_GIT_REPO)
+            repourl=$(params.TARGET_GIT_REPO)
+            reponame=$(echo $repourl | rev | cut -d '/' -f 1 | rev | sed -e 's/.git//')
+            cd ${reponame}
+            mkdir -p argocd-apps/$(params.APP_NAME)
+            cd argocd-apps/$(params.APP_NAME)
+            cp $(workspaces.input.path)/* .
+            git add . || true
+            git commit -m "update with $(params.APP_NAME) manifests" || true
+            GIT_SSH_COMMAND="ssh -i ${PARAM_USER_HOME}/.ssh/id_rsa -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no" git push || true
+      workspaces:
+        - name: source
+          workspace: workspace
+        - name: input
+          workspace: manifests
+        - name: ssh-directory
+          workspace: sshconfig
   workspaces:
     - name: workspace
     - name: dockerconfig
@@ -107,4 +149,6 @@ spec:
     - name: target
       optional: true
     - name: manifests
+      optional: true
+    - name: sshconfig
       optional: true

@@ -14,23 +14,6 @@
         state: present
       register: created_pipelinerun
 
-# Not needed since the ArgoCD Application{Set}/RHACM Application can just point to the source repo...
-#- name: Pipelines for Kustomize strategy
-#  when: (_cicd_kemo_dev_appdeployment_spec.build.strategy | lower) == "kustomize"
-#  block:
-#    - name: Create the Pipeline for a Kustomization deploymetn
-#      kubernetes.core.k8s:
-#        definition: "{{ lookup('template', 'kustomize-pipeline.yaml.j2') }}"
-#        state: present
-#
-#    - name: Create the PipelineRun for a Kustomization deployment
-#      kubernetes.core.k8s:
-#        definition: "{{ lookup('template', 'kustomize-pipelinerun.yaml.j2') }}"
-#        state: present
-#      register: created_pipelinerun
-
-#- name: Pipeline Watcher
-#  block:
     - name: Submit a Pipeline Running Status
       operator_sdk.util.k8s_status:
         api_version: cicd.kemo.dev/v1alpha1
@@ -94,18 +77,23 @@
               message: "The PipelineRun {{ created_pipelinerun.result.metadata.name }} for the AppDeployment has failed"
               lastTransitionTime: "{{ lookup('pipe', 'date --rfc-3339 seconds') }}"
 
-      #rescue:
-      #  - name: PipelineRun Watcher Failed
-      #    operator_sdk.util.k8s_status:
-      #      api_version: cicd.kemo.dev/v1alpha1
-      #      kind: AppDeployment
-      #      name: "{{ ansible_operator_meta.name }}"
-      #      namespace: "{{ ansible_operator_meta.namespace }}"
-      #      conditions:
-      #      - type: PipelineFinished
-      #        status: "False"
-      #        reason: TimedOut
-      #        message: "The PipelineRun {{ created_pipelinerun.result.metadata.name }} for the AppDeployment has timed out or an unknown error has occured."
-      #        lastTransitionTime: "{{ lookup('pipe', 'date --rfc-3339 seconds') }}"
-      #  - ansible.builtin.fail:
-      #      msg: "The PipelineRun {{ created_pipelinerun.result.metadata.name }} for the AppDeployment has timed out or an unknown error has occured."
+        - name: Send a failure message if the PipelineRun has failed
+          when: pipelinerun_info.resources[0].status.conditions[0].status == "False"
+          ansible.builtin.fail:
+            msg: "The PipelineRun {{ created_pipelinerun.result.metadata.name }} for the AppDeployment has failed"
+
+      rescue:
+        - name: PipelineRun Watcher Failed
+          operator_sdk.util.k8s_status:
+            api_version: cicd.kemo.dev/v1alpha1
+            kind: AppDeployment
+            name: "{{ ansible_operator_meta.name }}"
+            namespace: "{{ ansible_operator_meta.namespace }}"
+            conditions:
+            - type: PipelineFinished
+              status: "False"
+              reason: TimedOut
+              message: "The PipelineRun {{ created_pipelinerun.result.metadata.name }} for the AppDeployment has timed out or an unknown error has occured."
+              lastTransitionTime: "{{ lookup('pipe', 'date --rfc-3339 seconds') }}"
+        - ansible.builtin.fail:
+            msg: "The PipelineRun {{ created_pipelinerun.result.metadata.name }} for the AppDeployment has timed out or an unknown error has occured."

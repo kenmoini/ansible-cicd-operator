@@ -10,20 +10,20 @@
       register: temp_gitclone_path
 
     - name: Create temporary file for the SSH key
-      when: (source_gitrepo_info.resources[0].spec.credentials is defined) and (source_gitrepo_secret_info.resources[0].data['ssh_key'] is defined)
+      when: (source_gitrepo_info.resources[0].spec.credentials is defined) and (source_gitrepo_secret_info.resources[0].data['id_rsa'] is defined)
       ansible.builtin.tempfile:
         state: file
         suffix: tempkey
       register: tempfile_1
 
     - name: Write the SSH key to the temporary file
-      when: (source_gitrepo_info.resources[0].spec.credentials is defined) and (source_gitrepo_secret_info.resources[0].data['ssh_key'] is defined)
+      when: (source_gitrepo_info.resources[0].spec.credentials is defined) and (source_gitrepo_secret_info.resources[0].data['id_rsa'] is defined)
       ansible.builtin.template:
         src: templates/filefiller.j2
         dest: "{{ tempfile_1.path }}"
         mode: '0600'
       vars:
-        content: "{{ source_gitrepo_secret_info.resources[0].data['ssh_key'] | b64decode | trim }}"
+        content: "{{ source_gitrepo_secret_info.resources[0].data['id_rsa'] | b64decode | trim }}"
 
     - name: Connect to the git repo
       ansible.builtin.git:
@@ -33,7 +33,7 @@
         clone: yes
         single_branch: yes
         version: "{{ _cicd_kemo_dev_appdeployment_spec.sourceRepository.branch | default(source_gitrepo_info.resources[0].spec.branch) }}"
-        key_file: "{{ tempfile_1.path if ((source_gitrepo_info.resources[0].spec.credentials is defined) and (source_gitrepo_secret_info.resources[0].data['ssh_key'] is defined)) else omit }}"
+        key_file: "{{ tempfile_1.path if ((source_gitrepo_info.resources[0].spec.credentials is defined) and (source_gitrepo_secret_info.resources[0].data['id_rsa'] is defined)) else omit }}"
         ssh_opts: "-o StrictHostKeyChecking=no"
 
     - name: Read in the Dockerfile
@@ -114,7 +114,7 @@
         state: absent
 
     - name: Clean up the SSH key
-      when: (source_gitrepo_info.resources[0].spec.credentials is defined) and (source_gitrepo_secret_info.resources[0].data['ssh_key'] is defined)
+      when: (source_gitrepo_info.resources[0].spec.credentials is defined) and (source_gitrepo_secret_info.resources[0].data['id_rsa'] is defined)
       ansible.builtin.file:
         path: "{{ tempfile_1.path }}"
         state: absent
@@ -137,3 +137,5 @@
           reason: Error
           message: "The deployment manifests were not created in {{ ansible_operator_meta.name }}-manifests in the namepsace {{ ansible_operator_meta.namespace }}"
           lastTransitionTime: "{{ lookup('pipe', 'date --rfc-3339 seconds') }}"
+    - ansible.builtin.fail:
+        msg: "The deployment manifests were not created in {{ ansible_operator_meta.name }}-manifests in the namepsace {{ ansible_operator_meta.namespace }}"

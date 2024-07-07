@@ -1,0 +1,51 @@
+{% if _cicd_kemo_dev_appdeployment_spec.registry.imageName is defined %}
+{% set imageName = _cicd_kemo_dev_appdeployment_spec.registry.imageName %}
+{% else %}
+{% set imageName = ansible_operator_meta.name %}
+{% endif %}
+{% if image_registry_secret_info.resources[0].data['.dockerconfigjson'] is defined %}
+{% set repoTargetJSON = image_registry_secret_info.resources[0].data['.dockerconfigjson'] | b64decode %}
+{% endif %}
+{% if image_registry_secret_info.resources[0].data['.dockercfg'] is defined %}
+{% set repoTargetJSON = image_registry_secret_info.resources[0].data['.dockercfg'] | b64decode %}
+{% endif %}
+{% set repoTarget = lookup('ansible.builtin.dict', (repoTargetJSON | from_json).auths).key %}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ ansible_operator_meta.name }}
+  #namespace: {{ _cicd_kemo_dev_appdeployment_spec.target.namespace }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "5"
+spec:
+  serviceName: {{ ansible_operator_meta.name }}
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ ansible_operator_meta.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ ansible_operator_meta.name }}
+    spec:
+      terminationGracePeriodSeconds: 10
+      containers:
+        - name: {{ ansible_operator_meta.name }}
+          image: '{{ repoTarget }}/{{ _cicd_kemo_dev_appdeployment_spec.registry.path }}/{{ imageName }}'
+          #command:
+          #  - /bin/sh
+          #  - -c
+          #  - mongod --bind_ip 0.0.0.0 --port 27017
+          resources:
+            requests:
+              cpu: 400m
+              memory: 512Mi
+            limits:
+              memory: 1Gi
+          ports:
+{% for port in detected_service_ports %}
+            - containerPort: {{ port }}
+              protocol: TCP
+              name: {{ port }}-tcp
+{% endfor %}

@@ -54,6 +54,14 @@ spec:
       value: {{ _cicd_kemo_dev_appdeployment_spec.sourceRepository.contextDir }}
     - name: DOCKERFILE
       value: {{ _cicd_kemo_dev_appdeployment_spec.build.dockerfile }}
+    - name: GIT_USER_EMAIL
+      value: cicd-system@kemo.dev
+    - name: GIT_USER_NAME
+      value: {{ (target_gitrepo_secret_info.resources[0].data.username | b64decode) | default('CICDSystemBot') }}
+    - name: TARGET_GIT_REPO
+      value: '{{ target_gitrepo_info.resources[0].spec.url }}'
+    - name: TARGET_GIT_REVISION
+      value: '{{ target_gitrepo_info.resources[0].spec.branch }}'
   pipelineRef:
     name: {{ ansible_operator_meta.name }}
   taskRunTemplate:
@@ -67,6 +75,9 @@ spec:
     - name: manifests
       configmap:
         name: {{ ansible_operator_meta.name }}-manifests
+    - name: sshconfig
+      secret:
+        secretName: {{ target_gitrepo_info.resources[0].spec.credentials.name }}
     - name: workspace
       volumeClaimTemplate:
         metadata:

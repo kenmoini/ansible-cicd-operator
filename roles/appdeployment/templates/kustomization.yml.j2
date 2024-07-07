@@ -6,5 +6,7 @@ namespace: {{ _cicd_kemo_dev_appdeployment_spec.target.namespace }}
 
 resources:
 {% for manifest in manifests %}
+{% if manifest != "kustomization.yml" %}
   - {{ manifest }}
+{% endif %}
 {% endfor %}
