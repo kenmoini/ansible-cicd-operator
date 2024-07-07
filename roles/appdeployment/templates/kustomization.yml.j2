@@ -10,3 +10,17 @@ resources:
   - {{ manifest }}
 {% endif %}
 {% endfor %}
+
+{% if _cicd_kemo_dev_appdeployment_spec.build.kustomize is defined %}
+{% if _cicd_kemo_dev_appdeployment_spec.build.kustomize.patches is defined %}
+patches:
+{% for patch in _cicd_kemo_dev_appdeployment_spec.build.kustomize.patches %}
+- target:
+    kind: {{ patch.target.kind }}
+    name: {{ patch.target.name }}
+    namespace: {{ patch.target.namespace }}
+  patch: |-
+    {{ patch.patch | indent( width=4, first=False) }}
+{% endfor %}
+{% endif %}
+{% endif %}

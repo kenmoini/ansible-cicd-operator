@@ -45,6 +45,24 @@
       ansible.builtin.set_fact:
         detected_service_ports: "{{ dockerfile_read.content | b64decode | regex_findall('EXPOSE ([0-9]+)') }}"
 
+    - name: Set fact for imageName
+      ansible.builtin.set_fact:
+        imageName: "{{ _cicd_kemo_dev_appdeployment_spec.registry.imageName | default(ansible_operator_meta.name) }}"
+
+    - name: Set fact for repoTargetJSON - dockerconfigjson
+      when: image_registry_secret_info.resources[0].data['.dockerconfigjson'] is defined
+      ansible.builtin.set_fact:
+        repoTargetJSON: "{{ image_registry_secret_info.resources[0].data['.dockerconfigjson'] | b64decode }}"
+
+    - name: Set fact for repoTargetJSON - dockercfg
+      when: image_registry_secret_info.resources[0].data['.dockercfg'] is defined
+      ansible.builtin.set_fact:
+        repoTargetJSON: "{{ image_registry_secret_info.resources[0].data['.dockercfg'] | b64decode }}"
+
+    - name: Set fact for repoTarget
+      ansible.builtin.set_fact:
+        repoTarget: "{{ lookup('ansible.builtin.dict', (repoTargetJSON).auths).key }}"
+
 ############################################## Create Manifests - General
 
     - name: Create a temporary path for the manifests

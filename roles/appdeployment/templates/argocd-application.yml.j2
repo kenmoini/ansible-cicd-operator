@@ -15,15 +15,18 @@ spec:
     - repoURL: '{{ target_gitrepo_info.resources[0].spec.url }}'
       path: argocd-apps/{{ ansible_operator_meta.name }}
       targetRevision: {{ target_gitrepo_info.resources[0].spec.branch }}
+      kustomize:
+        images:
+        - '{{ repoTarget }}/{{ _cicd_kemo_dev_appdeployment_spec.registry.path }}/{{ imageName }}@{{ built_image_hash }}'
 {% endif %}
 {% if (_cicd_kemo_dev_appdeployment_spec.build.strategy | lower) == "kustomize" %}
     - repoURL: '{{ source_gitrepo_info.resources[0].spec.url }}'
       path: {{ _cicd_kemo_dev_appdeployment_spec.sourceRepository.contextDir | default('.') }}
       targetRevision: {{ _cicd_kemo_dev_appdeployment_spec.sourceRepository.branch | default(source_gitrepo_info.resources[0].spec.branch) }}
+      kustomize: {}
 {% endif %}
       #directory:
       #  recurse: true
-      kustomize: {}
         #version: v5.1.0
   project: {{ cicd_system_info.resources[0].metadata.name }}
   syncPolicy:

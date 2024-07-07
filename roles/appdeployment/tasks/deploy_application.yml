@@ -24,7 +24,8 @@
                 namespace: openshift-gitops
                 name: "{{ ansible_operator_meta.name }}"
               register: argocd_application_info
-              until: (argocd_application_info.resources[0].status.health.status == "Healthy") and (argocd_application_info.resources[0].status.sync.status == "Synced")
+              #until: (argocd_application_info.resources[0].status.health.status == "Healthy") and (argocd_application_info.resources[0].status.sync.status == "Synced")
+              until: (argocd_application_info.resources[0].status.health.status == "Healthy")
               retries: 30
               delay: 10
 

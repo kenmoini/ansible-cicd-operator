@@ -82,6 +82,33 @@
           ansible.builtin.fail:
             msg: "The PipelineRun {{ created_pipelinerun.result.metadata.name }} for the AppDeployment has failed"
 
+        - name: Get Image Tag
+          when: pipelinerun_info.resources[0].status.conditions[0].status == "True"
+          block:
+            - name: Get the TaskRun for the build task
+              kubernetes.core.k8s_info:
+                kind: TaskRun
+                namespace: cicd-system
+                name: "{{ (pipelinerun_info.resources[0].status.childReferences | selectattr('pipelineTaskName', 'equalto', 'build') | first).name }}"
+              register: taskrun_info
+
+            - name: Set fact for the image tag
+              set_fact:
+                built_image_hash: "{{ (taskrun_info.resources[0].status.results | selectattr('name', 'equalto', 'IMAGE_DIGEST') | first).value }}"
+
+            - name: Built Image Tag Status
+              operator_sdk.util.k8s_status:
+                api_version: cicd.kemo.dev/v1alpha1
+                kind: AppDeployment
+                name: "{{ ansible_operator_meta.name }}"
+                namespace: "{{ ansible_operator_meta.namespace }}"
+                conditions:
+                - type: BuiltImageTag
+                  status: "True"
+                  reason: BuiltAndPushed
+                  message: "Pushed {{ repoTarget }}/{{ _cicd_kemo_dev_appdeployment_spec.registry.path }}/{{ imageName }}@{{ built_image_hash }}"
+                  lastTransitionTime: "{{ lookup('pipe', 'date --rfc-3339 seconds') }}"
+
       rescue:
         - name: PipelineRun Watcher Failed
           operator_sdk.util.k8s_status:

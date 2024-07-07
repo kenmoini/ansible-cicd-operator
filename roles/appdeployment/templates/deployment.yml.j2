@@ -1,15 +1,3 @@
-{% if _cicd_kemo_dev_appdeployment_spec.registry.imageName is defined %}
-{% set imageName = _cicd_kemo_dev_appdeployment_spec.registry.imageName %}
-{% else %}
-{% set imageName = ansible_operator_meta.name %}
-{% endif %}
-{% if image_registry_secret_info.resources[0].data['.dockerconfigjson'] is defined %}
-{% set repoTargetJSON = image_registry_secret_info.resources[0].data['.dockerconfigjson'] | b64decode %}
-{% endif %}
-{% if image_registry_secret_info.resources[0].data['.dockercfg'] is defined %}
-{% set repoTargetJSON = image_registry_secret_info.resources[0].data['.dockercfg'] | b64decode %}
-{% endif %}
-{% set repoTarget = lookup('ansible.builtin.dict', (repoTargetJSON | from_json).auths).key %}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -31,9 +19,13 @@ spec:
       containers:
         - name: {{ ansible_operator_meta.name }}
           image: '{{ repoTarget }}/{{ _cicd_kemo_dev_appdeployment_spec.registry.path }}/{{ imageName }}'
+          env: []
           ports:
-            - containerPort: 8080
+{% for port in detected_service_ports %}
+            - containerPort: {{ port }}
               protocol: TCP
+              name: {{ port }}-tcp
+{% endfor %}
           resources: {}
           imagePullPolicy: Always
       restartPolicy: Always
