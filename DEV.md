@@ -29,6 +29,13 @@
 - Create a test namespace: `oc new-project cicd-system`
 - Create the CICDSystem defined in `oc apply -f config/samples/cicd_v1alpha1_cicdsystem.yaml`
 
+## In-cluster testing
+
+- Build and push the operator image: `make podman-build podman-push IMG=quay.io/kenmoini/cicd-operator:v0.0.1`
+- Deploy the operator to the cluster `make deploy IMG=quay.io/kenmoini/cicd-operator:v0.0.1`
+- Create CRDs and do testing
+- Clean up with `make undeploy`
+
 ## Architecture
 
 - The Ansible CI/CD Operator is meant to provide an easy way to standardize application development and deployment across Kubernetes environments.
