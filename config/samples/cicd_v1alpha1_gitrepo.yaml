@@ -1,3 +1,4 @@
+---
 apiVersion: cicd.kemo.dev/v1alpha1
 kind: GitRepo
 metadata:
@@ -9,9 +10,22 @@ metadata:
     app.kubernetes.io/created-by: ansible-cicd-operator
   name: gitrepo-sample
 spec:
-  # TODO(user): Add fields here
   url: git@github.com:kenmoini/cicd-system-apps.git
   branch: deploy
   credentials:
     name: git-credentials
     namespace: cicd-system
+---
+apiVersion: cicd.kemo.dev/v1alpha1
+kind: GitRepo
+metadata:
+  labels:
+    app.kubernetes.io/name: gitrepo
+    app.kubernetes.io/instance: source-repo
+    app.kubernetes.io/part-of: ansible-cicd-operator
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: ansible-cicd-operator
+  name: source-repo
+spec:
+  branch: main
+  url: 'https://github.com/kenmoini/ai-lab-recipes'
