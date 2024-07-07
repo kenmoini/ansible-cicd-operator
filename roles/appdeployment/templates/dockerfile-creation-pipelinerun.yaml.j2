@@ -1,7 +1,7 @@
-{% if _cicd_kemo_dev_appdeployment.spec.registry.imageName is defined %}
-{% set imageName = _cicd_kemo_dev_appdeployment.spec.registry.imageName %}
+{% if _cicd_kemo_dev_appdeployment_spec.registry.imageName is defined %}
+{% set imageName = _cicd_kemo_dev_appdeployment_spec.registry.imageName %}
 {% else %}
-{% set imageName = _cicd_kemo_dev_appdeployment.metadata.name %}
+{% set imageName = ansible_operator_meta.name %}
 {% endif %}
 
 {% if image_registry_secret_info.resources[0].data['.dockerconfigjson'] is defined %}
@@ -12,8 +12,8 @@
 {% endif %}
 {% set repoTarget = lookup('ansible.builtin.dict', (repoTargetJSON | from_json).auths).key %}
 
-{% if _cicd_kemo_dev_appdeployment.spec.sourceRepository.branch is defined }
-{% set sourceBranch = _cicd_kemo_dev_appdeployment.spec.sourceRepository.branch %}
+{% if _cicd_kemo_dev_appdeployment_spec.sourceRepository.branch is defined %}
+{% set sourceBranch = _cicd_kemo_dev_appdeployment_spec.sourceRepository.branch %}
 {% else %}
 {% set sourceBranch = source_gitrepo_info.resources.spec.branch %}
 {% endif %}
@@ -24,34 +24,38 @@ kind: PipelineRun
 metadata:
   annotations:
     chains.tekton.dev/signed: 'true'
-    pipeline.openshift.io/started-by: appDeployment-{{ _cicd_kemo_dev_appdeployment.metadata.name }}
-  generateName: {{ _cicd_kemo_dev_appdeployment.metadata.name }}-
+    pipeline.openshift.io/started-by: appDeployment-{{ ansible_operator_meta.name }}
+  generateName: {{ ansible_operator_meta.name }}-
   namespace: {{ ansible_operator_meta.namespace }}
   finalizers:
     - chains.tekton.dev/pipelinerun
   labels:
-    app.kubernetes.io/instance: {{ _cicd_kemo_dev_appdeployment.metadata.name }}
-    app.kubernetes.io/name: {{ _cicd_kemo_dev_appdeployment.metadata.name }}
+    app.kubernetes.io/instance: {{ ansible_operator_meta.name }}
+    app.kubernetes.io/name: {{ ansible_operator_meta.name }}
     pipeline.openshift.io/strategy: docker
     pipeline.openshift.io/type: kubernetes
     pipeline.openshift.io/git-ranch: {{ sourceBranch }}
-    tekton.dev/pipeline: {{ _cicd_kemo_dev_appdeployment.metadata.name }}
+    tekton.dev/pipeline: {{ ansible_operator_meta.name }}
 spec:
   params:
     - name: APP_NAME
-      value: {{ _cicd_kemo_dev_appdeployment.metadata.name }}
+      value: {{ ansible_operator_meta.name }}
     - name: GIT_REPO
       value: '{{ source_gitrepo_info.resources[0].spec.url }}'
     - name: GIT_REVISION
       value: '{{ sourceBranch }}'
     - name: IMAGE_NAME
-      value: '{{ repoTarget }}/{{ _cicd_kemo_dev_appdeployment.spec.registry.path }}/{{ imageName }}'
+      value: '{{ repoTarget }}/{{ _cicd_kemo_dev_appdeployment_spec.registry.path }}/{{ imageName }}'
+    - name: IMAGE_TAG
+      value: latest
+    - name: MULTI_IMAGE_TAG
+      value: "true"
     - name: PATH_CONTEXT
-      value: {{ _cicd_kemo_dev_appdeployment.spec.sourceRepository.contextDir }}
+      value: {{ _cicd_kemo_dev_appdeployment_spec.sourceRepository.contextDir }}
     - name: DOCKERFILE
-      value: {{ _cicd_kemo_dev_appdeployment.spec.build.dockerfile }}
+      value: {{ _cicd_kemo_dev_appdeployment_spec.build.dockerfile }}
   pipelineRef:
-    name: {{ _cicd_kemo_dev_appdeployment.metadata.name }}
+    name: {{ ansible_operator_meta.name }}
   taskRunTemplate:
     serviceAccountName: pipeline
   timeouts:

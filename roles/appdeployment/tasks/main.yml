@@ -1,10 +1,15 @@
 ---
 # tasks file for AppDeployment
+- name: Set facts for AppDeployment
+  ansible.builtin.set_fact:
+    thisAD: "{{ hostvars[inventory_hostname]._cicd_kemo_dev_appdeployment_spec }}"
+
 - name: Run preflight checks
-  include_tasks: preflight.yml
+  ansible.builtin.include_tasks: preflight.yml
 
 - name: Get resources
-  include_tasks: get_resources.yml
+  ansible.builtin.include_tasks: get_resources.yml
 
 - name: Create and run the Tekton Pipeline
-  include_tasks: pipeline.yml
+  ansible.builtin.include_tasks: pipeline.yml
+

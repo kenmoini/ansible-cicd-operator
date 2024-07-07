@@ -1,7 +1,7 @@
-{% if _cicd_kemo_dev_appdeployment.spec.registry.imageName is defined %}
-{% set imageName = _cicd_kemo_dev_appdeployment.spec.registry.imageName %}
+{% if _cicd_kemo_dev_appdeployment_spec.registry.imageName is defined %}
+{% set imageName = _cicd_kemo_dev_appdeployment_spec.registry.imageName %}
 {% else %}
-{% set imageName = _cicd_kemo_dev_appdeployment.metadata.name %}
+{% set imageName = ansible_operator_meta.name %}
 {% endif %}
 
 {% if image_registry_secret_info.resources[0].data['.dockerconfigjson'] is defined %}
@@ -16,23 +16,23 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ _cicd_kemo_dev_appdeployment.metadata.name }}
-  #namespace: {{ _cicd_kemo_dev_appdeployment.target.namespace }}
+  name: {{ ansible_operator_meta.name }}
+  #namespace: {{ _cicd_kemo_dev_appdeployment_spec.target.namespace }}
   annotations:
     argocd.argoproj.io/sync-wave: "5"
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: {{ _cicd_kemo_dev_appdeployment.metadata.name }}
+      app: {{ ansible_operator_meta.name }}
   template:
     metadata:
       labels:
-        app: {{ _cicd_kemo_dev_appdeployment.metadata.name }}
+        app: {{ ansible_operator_meta.name }}
     spec:
       containers:
-        - name: {{ _cicd_kemo_dev_appdeployment.metadata.name }}
-          image: '{{ repoTarget }}/{{ _cicd_kemo_dev_appdeployment.spec.registry.path }}/{{ imageName }}'
+        - name: {{ ansible_operator_meta.name }}
+          image: '{{ repoTarget }}/{{ _cicd_kemo_dev_appdeployment_spec.registry.path }}/{{ imageName }}'
           ports:
             - containerPort: 8080
               protocol: TCP

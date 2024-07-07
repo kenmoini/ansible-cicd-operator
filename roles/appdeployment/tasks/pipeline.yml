@@ -1,6 +1,6 @@
 ---
+
 - name: Pipelines for Dockerbuild strategy
-  when: _cicd_kemo_dev_appdeployment_spec.build.strategy == "docker"
   block:
     - name: Create the Pipeline for a Dockerfile build
       kubernetes.core.k8s:
@@ -63,7 +63,7 @@
             - type: PipelineFinished
               status: "False"
               reason: Failed
-              message: "The PipelineRun {{ created_pipelinerun.result.metadata.name }} for the AppDeployment has succeeded"
+              message: "The PipelineRun {{ created_pipelinerun.result.metadata.name }} for the AppDeployment has failed"
               lastTransitionTime: "{{ lookup('pipe', 'date --rfc-3339 seconds') }}"
 
       rescue:

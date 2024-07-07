@@ -2,12 +2,12 @@
 apiVersion: route.openshift.io/v1
 kind: Route
 metadata:
-  name: {{ _cicd_kemo_dev_appdeployment.metadata.name }}
-  # namespace: {{ _cicd_kemo_dev_appdeployment.target.namespace }}
+  name: {{ ansible_operator_meta.name }}
+  # namespace: {{ _cicd_kemo_dev_appdeployment_spec.target.namespace }}
 spec:
   to:
     kind: Service
-    name: {{ _cicd_kemo_dev_appdeployment.metadata.name }}
+    name: {{ ansible_operator_meta.name }}
     weight: 100
   port:
     targetPort: "8080-tcp"

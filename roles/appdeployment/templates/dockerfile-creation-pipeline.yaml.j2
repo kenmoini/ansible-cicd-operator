@@ -1,7 +1,7 @@
 {% if _cicd_kemo_dev_appdeployment_spec.registry.imageName is defined %}
 {% set imageName = _cicd_kemo_dev_appdeployment_spec.registry.imageName %}
 {% else %}
-{% set imageName = _cicd_kemo_dev_appdeployment.metadata.name %}
+{% set imageName = ansible_operator_meta.name %}
 {% endif %}
 
 {% if image_registry_secret_info.resources[0].data['.dockerconfigjson'] is defined %}
@@ -17,25 +17,31 @@ apiVersion: tekton.dev/v1beta1
 kind: Pipeline
 metadata:
   labels:
-    app.kubernetes.io/instance: {{ _cicd_kemo_dev_appdeployment.metadata.name }}
-    app.kubernetes.io/name: {{ _cicd_kemo_dev_appdeployment.metadata.name }}
+    app.kubernetes.io/instance: {{ ansible_operator_meta.name }}
+    app.kubernetes.io/name: {{ ansible_operator_meta.name }}
     pipeline.openshift.io/strategy: docker
     pipeline.openshift.io/type: kubernetes
-  name: {{ _cicd_kemo_dev_appdeployment.metadata.name }}
+  name: {{ ansible_operator_meta.name }}
   namespace: {{ ansible_operator_meta.namespace }}
 spec:
   params:
-    - default: {{ _cicd_kemo_dev_appdeployment.metadata.name }}
+    - default: {{ ansible_operator_meta.name }}
       name: APP_NAME
       type: string
     - default: '{{ source_gitrepo_info.resources[0].spec.url }}'
       name: GIT_REPO
       type: string
-    - default: '{{ source_gitrepo_info.resources.spec.branch }}'
+    - default: '{{ source_gitrepo_info.resources[0].spec.branch }}'
       name: GIT_REVISION
       type: string
     - default: '{{ repoTarget }}/{{ _cicd_kemo_dev_appdeployment_spec.registry.path }}/{{ imageName }}'
       name: IMAGE_NAME
+      type: string
+    - name: IMAGE_TAG
+      default: latest
+      type: string
+    - name: MULTI_IMAGE_TAG
+      default: "true"
       type: string
     - default: {{ _cicd_kemo_dev_appdeployment_spec.sourceRepository.contextDir }}
       name: PATH_CONTEXT
@@ -64,6 +70,10 @@ spec:
       params:
         - name: IMAGE
           value: $(params.IMAGE_NAME)
+        - name: IMAGE_TAG
+          value: $(params.IMAGE_TAG)
+        - name: MULTI_IMAGE_TAG
+          value: $(params.MULTI_IMAGE_TAG)
         - name: TLSVERIFY
           value: 'false'
         - name: CONTEXT

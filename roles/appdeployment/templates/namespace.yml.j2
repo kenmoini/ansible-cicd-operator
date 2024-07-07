@@ -2,8 +2,8 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: {{ _cicd_kemo_dev_appdeployment.target.namespace }}
+  name: {{ _cicd_kemo_dev_appdeployment_spec.target.namespace }}
   annotations:
     argocd.argoproj.io/sync-wave: "-1"
-    openshift.io/display-name: "{{ _cicd_kemo_dev_appdeployment.metadata.name }}"
+    openshift.io/display-name: "{{ ansible_operator_meta.name }}"
 spec: {}
