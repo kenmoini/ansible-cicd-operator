@@ -9,11 +9,13 @@ metadata:
     app.kubernetes.io/created-by: ansible-cicd-operator
   name: appdeployment-sample
 spec:
+  # sourceRepository controls the source code repository for the application
   sourceRepository:
     gitRepo:
       # The name/namespace of the GitRepo resource
       name: source-repo
       namespace: cicd-system
+    # contextDir is optional - if not defined will default to the root of the repository
     contextDir: convert_models
     # branch can override the branch that is defined in the GitRepo CR
     branch: main
@@ -21,23 +23,27 @@ spec:
     # The name/namespace of the ImageRegistry resource
     name: imageregistry-sample
     namespace: cicd-system
+    # path is the path to the image in the registry after the registry URL defined in the ImageRegistry CR targeted Secret's Docker Config JSON
     path: kenmoini
     # imageName is optional - will default to the AppDeployment name
     imageName: cicd-system-apps
+  # build defines how the application is built
   build:
     # strategy: docker or kustomize
     strategy: docker
+    # dockerfile: path to the dockerfile relative to the context_dir in the sourceRepository
     dockerfile: Containerfile.uisvc
     # deployment_type: Deployment or StatefulSet
     deployment_type: Deployment
-  # create_networking will create a Service and Route for the application
   # service will expose any port defined in the Dockerfile
-  # route will create a Route for the application
-  # hostname will set the hostname for the Route - if undefined will use the default wildcard ingress
   create_networking:
+    # create_networking will create a Service and Route for the application
     service: true
+    # route will create a Route for the application
     route: true
-    hostname: my-sample-app.com
+    # hostname will set the hostname for the Route - if undefined will use the default wildcard ingress
+    #hostname: my-sample-app.com
+  # target defines where the built application manifests are pushed to and what clusters they're deployed to
   target:
     cluster:
       # name and labelSelector are mutually exclusive - only one should be defined
@@ -47,7 +53,9 @@ spec:
       #labelSelector:
       #  matchLabels:
       #    vendor: OpenShift
+    # namespace is the namespace to deploy the application to on the target cluster
     namespace: convert-models
+    # gitRepo is the name/namespace of the GitRepo resource to push manifests to
     gitRepo:
       # The name/namepsace of the GitRepo resource to push manifests to
       name: gitrepo-sample
@@ -64,34 +72,55 @@ metadata:
     app.kubernetes.io/created-by: ansible-cicd-operator
   name: three-tier-frontend
 spec:
+  # sourceRepository controls the source code repository for the application
   sourceRepository:
     gitRepo:
       # The name/namespace of the GitRepo resource
       name: three-tier-source-repo
       namespace: cicd-system
+    # contextDir is optional - if not defined will default to the root of the repository
     contextDir: frontend
     # branch can override the branch that is defined in the GitRepo CR
     branch: main
+  # registry defines what image registry the built container will be pushed to
   registry:
     # The name/namespace of the ImageRegistry resource
     name: imageregistry-sample
     namespace: cicd-system
+    # path is the path to the image in the registry after the registry URL defined in the ImageRegistry CR targeted Secret's Docker Config JSON
     path: kenmoini
     # imageName is optional - will default to the AppDeployment name
     imageName: acicdo-three-tier-frontend
+  # build defines how the application is built
   build:
     # strategy: docker or kustomize
     strategy: docker
+    # dockerfile: path to the dockerfile relative to the context_dir in the sourceRepository
     dockerfile: Dockerfile
     # deployment_type: Deployment or StatefulSet
     deployment_type: Deployment
+    # kustomize allows you to pass extra parameters to the kustomization.yml file that is used to deploy this application
+    kustomize:
+      patches:
+      - patch: |-
+          - op: add
+            path: "/spec/template/spec/containers/0/env/-"
+            value:
+              name: REACT_APP_BACKEND_URL
+              value: 'https://three-tier-backend-three-tier-app.apps.mega-sno.v60.lab.kemo.network/api/tasks'
+        target:
+          kind: Deployment
+          namespace: three-tier-app
+          name: three-tier-frontend
   # create_networking will create a Service and Route for the application
-  # service will expose any port defined in the Dockerfile
-  # route will create a Route for the application
-  # hostname will set the hostname for the Route - if undefined will use the default wildcard ingress
   create_networking:
+    # service will expose any port defined in the Dockerfile
     service: true
+    # route will create a Route for the application
     route: true
+    # hostname will set the hostname for the Route - if undefined will use the default wildcard ingress
+    #hostname: my-awesome-app.com
+  # target defines where the built application manifests are pushed to and what clusters they're deployed to
   target:
     cluster:
       # name and labelSelector are mutually exclusive - only one should be defined
@@ -101,7 +130,9 @@ spec:
       #labelSelector:
       #  matchLabels:
       #    vendor: OpenShift
+    # namespace is the namespace to deploy the application to on the target cluster
     namespace: three-tier-app
+    # gitRepo is the name/namespace of the GitRepo resource to push manifests to
     gitRepo:
       # The name/namepsace of the GitRepo resource to push manifests to
       name: gitrepo-sample
@@ -118,34 +149,71 @@ metadata:
     app.kubernetes.io/created-by: ansible-cicd-operator
   name: three-tier-backend
 spec:
+  # sourceRepository controls the source code repository for the application
   sourceRepository:
     gitRepo:
       # The name/namespace of the GitRepo resource
       name: three-tier-source-repo
       namespace: cicd-system
+    # contextDir is optional - if not defined will default to the root of the repository
     contextDir: backend
     # branch can override the branch that is defined in the GitRepo CR
     branch: main
+  # registry defines what image registry the built container will be pushed to
   registry:
     # The name/namespace of the ImageRegistry resource
     name: imageregistry-sample
     namespace: cicd-system
+    # path is the path to the image in the registry after the registry URL defined in the ImageRegistry CR targeted Secret's Docker Config JSON
     path: kenmoini
     # imageName is optional - will default to the AppDeployment name
     imageName: acicdo-three-tier-backend
+  # build defines how the application is built
   build:
     # strategy: docker or kustomize
     strategy: docker
+    # dockerfile: path to the dockerfile relative to the context_dir in the sourceRepository
     dockerfile: Dockerfile
     # deployment_type: Deployment or StatefulSet
     deployment_type: StatefulSet
+    # kustomize allows you to pass extra parameters to the kustomization.yml file that is used to deploy this application
+    kustomize:
+      patches:
+      - patch: |-
+          - op: add
+            path: "/spec/template/spec/containers/0/env/-"
+            value:
+              name: MONGO_CONN_STR
+              value: mongodb://mongodb-svc:27017/todo?directConnection=true
+          - op: add
+            path: "/spec/template/spec/containers/0/env/-"
+            value:
+              name: MONGO_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: mongo-sec
+                  key: username
+          - op: add
+            path: "/spec/template/spec/containers/0/env/-"
+            value:
+              name: MONGO_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mongo-sec
+                  key: password
+        target:
+          kind: StatefulSet
+          namespace: three-tier-app
+          name: three-tier-backend
   # create_networking will create a Service and Route for the application
-  # service will expose any port defined in the Dockerfile
-  # route will create a Route for the application
-  # hostname will set the hostname for the Route - if undefined will use the default wildcard ingress
   create_networking:
+    # service will expose any port defined in the Dockerfile
     service: true
-    route: false
+    # route will create a Route for the application
+    route: true
+    # hostname will set the hostname for the Route - if undefined will use the default wildcard ingress
+    #hostname: my-awesome-app.com
+  # target defines where the built application manifests are pushed to and what clusters they're deployed to
   target:
     cluster:
       # name and labelSelector are mutually exclusive - only one should be defined
@@ -155,7 +223,9 @@ spec:
       #labelSelector:
       #  matchLabels:
       #    vendor: OpenShift
+    # namespace is the namespace to deploy the application to on the target cluster
     namespace: three-tier-app
+    # gitRepo is the name/namespace of the GitRepo resource to push manifests to
     gitRepo:
       # The name/namepsace of the GitRepo resource to push manifests to
       name: gitrepo-sample
@@ -172,17 +242,21 @@ metadata:
     app.kubernetes.io/created-by: ansible-cicd-operator
   name: three-tier-db
 spec:
+  # sourceRepository controls the source code repository for the application
   sourceRepository:
     gitRepo:
       # The name/namespace of the GitRepo resource
       name: three-tier-source-repo
       namespace: cicd-system
+    # contextDir is optional - if not defined will default to the root of the repository
     contextDir: k8s_manifests/mongo
     # branch can override the branch that is defined in the GitRepo CR
     branch: main
   build:
     # strategy: docker or kustomize
     strategy: kustomize
+    # with a kustomize build strategy the sourceRepository is used to pull the manifests and there are no futher configuration parameters
+  # target defines where the built application manifests are pushed to and what clusters they're deployed to
   target:
     cluster:
       # name and labelSelector are mutually exclusive - only one should be defined
@@ -192,7 +266,9 @@ spec:
       labelSelector:
         matchLabels:
           vendor: OpenShift
+    # namespace is the namespace to deploy the application to on the target cluster
     namespace: three-tier-app
+    # gitRepo is the name/namespace of the GitRepo resource to push manifests to
     gitRepo:
       # The name/namepsace of the GitRepo resource to push manifests to
       name: gitrepo-sample

@@ -9,21 +9,36 @@ metadata:
     app.kubernetes.io/created-by: ansible-cicd-operator
   name: cicdsystem-sample
 spec:
+  # pipelines controls the functions of the OpenShift Pipelines (Tekton) integration
   pipelines:
+    # deploy_openshift_pipelines - controls the deployment of the OpenShift Pipelines Operator
     deploy_openshift_pipelines: true
+    # openshift_pipelines_channel - the channel to use for the OpenShift Pipelines Operator
     openshift_pipelines_channel: stable
+    # operator_update_strategy - Automatic or Manual
+    operator_update_strategy: Automatic
+    # create_templates - controls the creation of the OpenShift Pipelines objects such as ClusterTasks
     create_templates: true
 
   cd:
+    # If both rhacm.enabled and argocd.enabled are true then the GitOpsCluster integration between RHACM and ArgoCD will be enabled
+    # rhacm - controls the functions of the Red Hat Advanced Cluster Management integration
     rhacm:
+      # enabled - if set to true will leverage RHACM integrations
       enabled: true
+      # deploy_operator - if set to true will deploy the RHACM Operator
       deploy_operator: true
+      # rhacm_operator_channel - the channel to use for the RHACM Operator
       rhacm_operator_channel: release-2.10
       # operator_update_strategy - Automatic or Manual
       operator_update_strategy: Automatic
+    # argocd - controls the functions of the ArgoCD integration
     argocd:
+      # enabled - if set to true will leverage ArgoCD integrations
       enabled: true
+      # deploy_operator - if set to true will deploy the ArgoCD Operator
       deploy_operator: true
+      # argocd_operator_channel - the channel to use for the ArgoCD Operator
       gitops_operator_channel: latest
       # operator_update_strategy - Automatic or Manual
       operator_update_strategy: Automatic
