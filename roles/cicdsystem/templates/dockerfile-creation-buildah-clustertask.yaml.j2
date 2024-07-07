@@ -116,6 +116,35 @@ spec:
           $(params.PUSH_EXTRA_ARGS) --tls-verify=$(params.TLSVERIFY) \
           --digestfile /tmp/image-digest $(params.IMAGE) \
           docker://$(params.IMAGE):$(params.IMAGE_TAG)
+
+        PUSH_IMAGES=()
+
+        if [[ "$(params.MULTI_IMAGE_TAG)" == "true" ]]; then
+          if test -d ".git"; then
+            detectedBranch=$(cat .git/FETCH_HEAD | cut -d "'" -f 2)
+            echo "detectedBranch: ${detectedBranch}"
+            detectedShasum=$(cat .git/HEAD)
+            echo "detectedShasum: ${detectedShasum}"
+            if [[ ! -z "$detectedBranch" ]]; then
+              PUSH_IMAGES+=("$(params.IMAGE):${detectedBranch}")
+            fi
+            if [[ ! -z "$detectedShasum" ]]; then
+              longShasum="$detectedShasum"
+              shortShasum="${detectedShasum:0:8}"
+              PUSH_IMAGES+=("$(params.IMAGE):${longShasum}")
+              PUSH_IMAGES+=("$(params.IMAGE):${shortShasum}")
+            fi
+
+            for imageMT in "${PUSH_IMAGES[@]}"
+            do
+              buildah --storage-driver=$(params.STORAGE_DRIVER) tag $(params.IMAGE):$(params.IMAGE_TAG) $imageMT
+              buildah --storage-driver=$(params.STORAGE_DRIVER) push \
+                $(params.PUSH_EXTRA_ARGS) --tls-verify=$(params.TLSVERIFY) \
+                docker://${imageMT}
+            done
+          fi
+        fi
+
         cat /tmp/image-digest | tee $(results.IMAGE_DIGEST.path)
         echo -n "$(params.IMAGE)" | tee $(results.IMAGE_URL.path)
       securityContext:
