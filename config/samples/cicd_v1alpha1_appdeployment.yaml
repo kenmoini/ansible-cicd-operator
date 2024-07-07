@@ -187,11 +187,11 @@ spec:
     cluster:
       # name and labelSelector are mutually exclusive - only one should be defined
       # name must be a cluster name found in ArgoCD/RHACM
-      name: local-cluster
+      #name: local-cluster
       # if a labelSelector is used an ApplicationSet will be generated instead of an Application
-      #labelSelector:
-      #  matchLabels:
-      #    vendor: OpenShift
+      labelSelector:
+        matchLabels:
+          vendor: OpenShift
     namespace: three-tier-app
     gitRepo:
       # The name/namepsace of the GitRepo resource to push manifests to
