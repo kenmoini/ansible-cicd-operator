@@ -1,0 +1,110 @@
+---
+############################################## Git Clone to read Dockerfile
+- name: Clone and read data for Docker builds
+  when: _cicd_kemo_dev_appdeployment_spec.build.strategy == "docker"
+  block: 
+    - name: Create a temporary path for the git clone
+      ansible.builtin.tempfile:
+        state: directory
+        suffix: gitclone
+      register: temp_gitclone_path
+
+    - name: Create temporary file for the SSH key
+      when: (source_gitrepo_info.resources[0].spec.credentials is defined) and (source_gitrepo_secret_info.resources[0].data['ssh_key'] is defined)
+      ansible.builtin.tempfile:
+        state: file
+        suffix: tempkey
+      register: tempfile_1
+
+    - name: Write the SSH key to the temporary file
+      when: (source_gitrepo_info.resources[0].spec.credentials is defined) and (source_gitrepo_secret_info.resources[0].data['ssh_key'] is defined)
+      ansible.builtin.template:
+        src: templates/filefiller.j2
+        dest: "{{ tempfile_1.path }}"
+        mode: '0600'
+      vars:
+        content: "{{ source_gitrepo_secret_info.resources[0].data['ssh_key'] | b64decode | trim }}"
+
+    - name: Connect to the git repo
+      ansible.builtin.git:
+        repo: "{{ source_gitrepo_info.resources[0].spec.url }}"
+        dest: "{{ temp_gitclone_path.path }}"
+        update: no
+        clone: yes
+        single_branch: yes
+        version: "{{ _cicd_kemo_dev_appdeployment_spec.sourceRepository.branch | default(source_gitrepo_info.resources[0].spec.branch) }}"
+        key_file: "{{ tempfile_1.path if ((source_gitrepo_info.resources[0].spec.credentials is defined) and (source_gitrepo_secret_info.resources[0].data['ssh_key'] is defined)) else omit }}"
+        ssh_opts: "-o StrictHostKeyChecking=no"
+
+    - name: Read in the Dockerfile
+      ansible.builtin.slurp:
+        src: "{{ temp_gitclone_path.path }}/{{ _cicd_kemo_dev_appdeployment_spec.sourceRepository.contextDir }}/{{ _cicd_kemo_dev_appdeployment_spec.build.dockerfile | default('Dockerfile') }}"
+      register: dockerfile_read
+
+    - name: Set fact for detected ports exposed in the dockerfile
+      ansible.builtin.set_fact:
+        detected_service_ports: "{{ dockerfile_read.content | b64decode | regex_findall('EXPOSE ([0-9]+)') }}"
+
+  always:
+    - name: Clean up the git clone
+      ansible.builtin.file:
+        path: "{{ temp_gitclone_path.path }}"
+        state: absent
+
+    - name: Clean up the SSH key
+      when: (source_gitrepo_info.resources[0].spec.credentials is defined) and (source_gitrepo_secret_info.resources[0].data['ssh_key'] is defined)
+      ansible.builtin.file:
+        path: "{{ tempfile_1.path }}"
+        state: absent
+
+- name: Create a temporary path for the manifests
+  ansible.builtin.tempfile:
+    state: directory
+    suffix: manifests
+  register: temp_manifests_path
+
+- name: Set a fact for the manifests
+  ansible.builtin.set_fact:
+    manifests:
+      - kustomization.yml
+      - namespace.yml
+
+- name: Create Manifests for a Deployment strategy
+  when: (_cicd_kemo_dev_appdeployment_spec.build.deployment_type | lower) == "deployment"
+  block:
+    - name: Append the Deployment to the manifests
+      ansible.builtin.set_fact:
+        manifests: "{{ manifests + ['deployment.yml'] }}"
+
+- name: Create Manifests for a StatefulSet strategy
+  when: (_cicd_kemo_dev_appdeployment_spec.build.deployment_type | lower) == "statefulset"
+  block:
+    - name: Append the StatefulSet to the manifests
+      ansible.builtin.set_fact:
+        manifests: "{{ manifests + ['statefulset.yml'] }}"
+
+- name: Append the Service to the manifests
+  when: _cicd_kemo_dev_appdeployment_spec.create_networking.service
+  ansible.builtin.set_fact:
+    manifests: "{{ manifests + ['service.yml'] }}"
+
+- name: Append the Route to the manifests
+  when: _cicd_kemo_dev_appdeployment_spec.create_networking.route
+  ansible.builtin.set_fact:
+    manifests: "{{ manifests + ['route.yml'] }}"
+
+- name: Template the manifests
+  ansible.builtin.template:
+    src: "templates/{{ item }}.j2"
+    dest: "{{ temp_manifests_path.path }}/{{ item }}"
+  loop: "{{ manifests }}"
+
+- name: Create a ConfigMap with all the needed manifests
+  kubernetes.core.k8s:
+    definition: "{{ lookup('template', 'manifest-configmap.yml.j2') }}"
+    state: present
+
+- name: Clean up the manifests directory
+  ansible.builtin.file:
+    path: "{{ temp_manifests_path.path }}"
+    state: absent

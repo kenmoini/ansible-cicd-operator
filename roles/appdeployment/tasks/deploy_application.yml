@@ -1,0 +1,15 @@
+---
+- name: Deploy application - ArgoCD
+  when: cicd_system_info.resources[0].spec.cd.system_type }} == "argocd"
+  block:
+    - name: Create ArgoCD Application
+      when: _cicd_kemo_dev_appdeployment_spec.target.cluster.name is defined
+      kubernetes.core.k8s:
+        definition: "{{ lookup('template', 'argocd-application.yml.j2') }}"
+        state: present
+
+    - name: Create ArgoCD ApplicationSet
+      when: _cicd_kemo_dev_appdeployment_spec.target.cluster.labelSelector is defined
+      kubernetes.core.k8s:
+        definition: "{{ lookup('template', 'argocd-applicationset.yml.j2') }}"
+        state: present

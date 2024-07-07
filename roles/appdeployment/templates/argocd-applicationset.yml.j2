@@ -1,0 +1,46 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: {{ ansible_operator_meta.name }}-appset
+  namespace: openshift-gitops
+spec:
+  generators:
+    - matrix:
+        generators:
+          - clusters:
+              selector:
+                matchLabels:
+{% for label in _cicd_kemo_dev_appdeployment_spec.target.cluster.labelSelector.matchLabels | dict2items %}
+                  {{ label.key }}: {{ label.value }}
+{% endfor %}
+          - list:
+              elements:
+              - appName: {{ ansible_operator_meta.name }}
+                namespace: {{ _cicd_kemo_dev_appdeployment_spec.target.namespace }}
+  template:
+    metadata:
+      name: "{% raw %}{{name}}-{{appName}}{% endraw %}"
+      annotations:
+        argocd.argoproj.io/manifest-generate-paths: ".;.."
+    spec:
+      project: {{ cicd_system_info.resources[0].metadata.name }}
+      sources:
+        - repoURL: '{{ target_gitrepo_info.resources[0].spec.url }}'
+          targetRevision: {{ source_gitrepo_info.resources[0].spec.branch }}
+          path: argocd-apps/{{ ansible_operator_meta.name }}
+          #directory:
+          #  recurse: true
+          kustomize: {}
+            #version: v5.1.0
+      destination:
+        name: "{{ '{{' }}name{{ '}}' }}"
+        namespace: "{{ '{{' }}namespace{{ '}}' }}"
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+        retry:
+          limit: 2

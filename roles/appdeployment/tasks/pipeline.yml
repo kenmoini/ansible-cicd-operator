@@ -1,6 +1,7 @@
 ---
 
 - name: Pipelines for Dockerbuild strategy
+  when: _cicd_kemo_dev_appdeployment_spec.build.strategy == "docker"
   block:
     - name: Create the Pipeline for a Dockerfile build
       kubernetes.core.k8s:
@@ -66,18 +67,18 @@
               message: "The PipelineRun {{ created_pipelinerun.result.metadata.name }} for the AppDeployment has failed"
               lastTransitionTime: "{{ lookup('pipe', 'date --rfc-3339 seconds') }}"
 
-      rescue:
-        - name: PipelineRun Watcher Failed
-          operator_sdk.util.k8s_status:
-            api_version: cicd.kemo.dev/v1alpha1
-            kind: AppDeployment
-            name: "{{ ansible_operator_meta.name }}"
-            namespace: "{{ ansible_operator_meta.namespace }}"
-            conditions:
-            - type: PipelineFinished
-              status: "False"
-              reason: TimedOut
-              message: "The PipelineRun {{ created_pipelinerun.result.metadata.name }} for the AppDeployment has timed out or an unknown error has occured."
-              lastTransitionTime: "{{ lookup('pipe', 'date --rfc-3339 seconds') }}"
-        - ansible.builtin.fail:
-            msg: "The PipelineRun {{ created_pipelinerun.result.metadata.name }} for the AppDeployment has timed out or an unknown error has occured."
+      #rescue:
+      #  - name: PipelineRun Watcher Failed
+      #    operator_sdk.util.k8s_status:
+      #      api_version: cicd.kemo.dev/v1alpha1
+      #      kind: AppDeployment
+      #      name: "{{ ansible_operator_meta.name }}"
+      #      namespace: "{{ ansible_operator_meta.namespace }}"
+      #      conditions:
+      #      - type: PipelineFinished
+      #        status: "False"
+      #        reason: TimedOut
+      #        message: "The PipelineRun {{ created_pipelinerun.result.metadata.name }} for the AppDeployment has timed out or an unknown error has occured."
+      #        lastTransitionTime: "{{ lookup('pipe', 'date --rfc-3339 seconds') }}"
+      #  - ansible.builtin.fail:
+      #      msg: "The PipelineRun {{ created_pipelinerun.result.metadata.name }} for the AppDeployment has timed out or an unknown error has occured."

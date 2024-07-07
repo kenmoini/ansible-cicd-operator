@@ -10,6 +10,11 @@
 - name: Get resources
   ansible.builtin.include_tasks: get_resources.yml
 
+- name: Create Deployment Manifests
+  ansible.builtin.include_tasks: create_manifests.yml
+
 - name: Create and run the Tekton Pipeline
   ansible.builtin.include_tasks: pipeline.yml
 
+- name: Deploy application
+  ansible.builtin.include_tasks: deploy_application.yml

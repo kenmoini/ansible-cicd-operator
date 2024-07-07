@@ -64,6 +64,9 @@ spec:
     - name: dockerconfig
       secret:
         secretName: {{ image_registry_info.resources[0].spec.credentials.name }}
+    - name: manifests
+      configmap:
+        name: {{ ansible_operator_meta.name }}-manifests
     - name: workspace
       volumeClaimTemplate:
         metadata:

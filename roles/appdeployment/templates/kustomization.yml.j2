@@ -5,6 +5,6 @@ kind: Kustomization
 namespace: {{ _cicd_kemo_dev_appdeployment_spec.target.namespace }}
 
 resources:
-{% for resource in deploymentResource %}
-- {{ resource }}
+{% for manifest in manifests %}
+  - {{ manifest }}
 {% endfor %}

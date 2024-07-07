@@ -4,13 +4,18 @@ kind: Route
 metadata:
   name: {{ ansible_operator_meta.name }}
   # namespace: {{ _cicd_kemo_dev_appdeployment_spec.target.namespace }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "15"
 spec:
+{% if _cicd_kemo_dev_appdeployment_spec.create_networking.hostname is defined %}
+  host: {{ _cicd_kemo_dev_appdeployment_spec.create_networking.hostname }}
+{% endif %}
   to:
     kind: Service
     name: {{ ansible_operator_meta.name }}
     weight: 100
   port:
-    targetPort: "8080-tcp"
+    targetPort: "{{ detected_service_ports | first }}-tcp"
   tls:
     termination: edge
   wildcardPolicy: None

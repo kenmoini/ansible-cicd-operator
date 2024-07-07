@@ -1,0 +1,11 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: "{{ ansible_operator_meta.name }}-manifests"
+  namespace: "{{ ansible_operator_meta.namespace }}"
+data:
+{% for m in manifests %}
+  {{ m }}: |
+    {{ lookup('file', temp_manifests_path.path + '/' + m) | indent( width=4, first=False) }}
+{% endfor %}

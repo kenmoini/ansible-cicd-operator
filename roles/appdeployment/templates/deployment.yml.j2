@@ -3,7 +3,6 @@
 {% else %}
 {% set imageName = ansible_operator_meta.name %}
 {% endif %}
-
 {% if image_registry_secret_info.resources[0].data['.dockerconfigjson'] is defined %}
 {% set repoTargetJSON = image_registry_secret_info.resources[0].data['.dockerconfigjson'] | b64decode %}
 {% endif %}
@@ -11,7 +10,6 @@
 {% set repoTargetJSON = image_registry_secret_info.resources[0].data['.dockercfg'] | b64decode %}
 {% endif %}
 {% set repoTarget = lookup('ansible.builtin.dict', (repoTargetJSON | from_json).auths).key %}
-
 ---
 apiVersion: apps/v1
 kind: Deployment
