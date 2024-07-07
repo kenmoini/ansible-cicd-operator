@@ -22,9 +22,10 @@
             name: "{{ ansible_operator_meta.name }}"
             uid: "{{ ansible_operator_meta.uid }}"
       spec:
-        channel: "{{ openshift_pipelines_channel }}"
+        channel: "{{ pipelines.openshift_pipelines_channel }}"
         name: openshift-pipelines-operator
         source: redhat-operators
+        installPlanApproval: "{{ pipelines.operator_update_strategy }}"
         sourceNamespace: openshift-marketplace
     state: present
 
