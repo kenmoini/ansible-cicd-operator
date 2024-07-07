@@ -79,8 +79,8 @@
           that:
             - secret_info.resources[0].data is defined
             - secret_info.resources[0].data['username'] is defined
-            - secret_info.resources[0].data['password'] is defined or secret_info.resources[0].data['ssh_key'] is defined
-          fail_msg: "The Secret '{{ credentials.name }}' in the '{{ credentials.namespace }}' namespace does not have the needed username or password/ssh_key keys"
+            - secret_info.resources[0].data['password'] is defined or secret_info.resources[0].data['id_rsa'] is defined
+          fail_msg: "The Secret '{{ credentials.name }}' in the '{{ credentials.namespace }}' namespace does not have the needed username or password/id_rsa keys"
           success_msg: "The Secret '{{ credentials.name }}' in the '{{ credentials.namespace }}' namespace has the needed data"
 
       rescue:
@@ -94,10 +94,10 @@
             - type: Validated
               status: "False"
               reason: CredentialError
-              message: "The Secret '{{ credentials.name }}' in the '{{ credentials.namespace }}' namespace does not have the needed username or password/ssh_key keys"
+              message: "The Secret '{{ credentials.name }}' in the '{{ credentials.namespace }}' namespace does not have the needed username or password/id_rsa keys"
               lastTransitionTime: "{{ lookup('pipe', 'date --rfc-3339 seconds') }}"
         - ansible.builtin.fail:
-            msg: "The Secret '{{ credentials.name }}' in the '{{ credentials.namespace }}' namespace does not have the needed username or password/ssh_key keys"
+            msg: "The Secret '{{ credentials.name }}' in the '{{ credentials.namespace }}' namespace does not have the needed username or password/id_rsa keys"
 
 - name: Create temporary directory to clone into
   ansible.builtin.tempfile:
@@ -106,20 +106,20 @@
   register: tempdir_1
 
 - name: Create temporary file for the SSH key
-  when: secret_info.resources[0].data['ssh_key'] is defined
+  when: secret_info.resources[0].data['id_rsa'] is defined
   ansible.builtin.tempfile:
     state: file
     suffix: tempkey
   register: tempfile_1
 
 - name: Write the SSH key to the temporary file
-  when: secret_info.resources[0].data['ssh_key'] is defined
+  when: secret_info.resources[0].data['id_rsa'] is defined
   ansible.builtin.template:
     src: templates/filefiller.j2
     dest: "{{ tempfile_1.path }}"
     mode: '0600'
   vars:
-    content: "{{ secret_info.resources[0].data['ssh_key'] | b64decode | trim }}"
+    content: "{{ secret_info.resources[0].data['id_rsa'] | b64decode | trim }}"
 
 - name: Check permissions to the Git repo
   block:
@@ -132,7 +132,7 @@
         clone: yes
         single_branch: yes
         version: "{{ branch }}"
-        key_file: "{{ tempfile_1.path if (secret_info.resources[0].data['ssh_key'] is defined) else omit }}"
+        key_file: "{{ tempfile_1.path if (secret_info.resources[0].data['id_rsa'] is defined) else omit }}"
         ssh_opts: "-o StrictHostKeyChecking=no"
       register: git_repo_connection_test
 
@@ -159,7 +159,7 @@
         state: absent
 
     - name: Delete the temporary files
-      when: secret_info.resources[0].data['ssh_key'] is defined
+      when: secret_info.resources[0].data['id_rsa'] is defined
       ansible.builtin.file:
         path: "{{ tempfile_1.path }}"
         state: absent
