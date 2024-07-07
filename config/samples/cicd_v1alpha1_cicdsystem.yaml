@@ -9,7 +9,6 @@ metadata:
     app.kubernetes.io/created-by: ansible-cicd-operator
   name: cicdsystem-sample
 spec:
-  # TODO(user): Add fields here
   pipelines:
     deploy_openshift_pipelines: true
     openshift_pipelines_channel: stable
@@ -20,10 +19,13 @@ spec:
       enabled: true
       deploy_operator: true
       rhacm_operator_channel: release-2.10
-      operator_update_strategy: Automatic # Automatic or Manual
+      # operator_update_strategy - Automatic or Manual
+      operator_update_strategy: Automatic
     argocd:
       enabled: true
       deploy_operator: true
       gitops_operator_channel: latest
-      operator_update_strategy: Automatic # Automatic or Manual
-    system_type: argocd # argocd or rhacm - this defines what kind of Application artifacts are created
+      # operator_update_strategy - Automatic or Manual
+      operator_update_strategy: Automatic
+    # system_type: argocd or rhacm - this defines what kind of Application artifacts are created
+    system_type: argocd
