@@ -29,8 +29,8 @@
 #        state: present
 #      register: created_pipelinerun
 
-- name: Pipeline Watcher
-  block:
+#- name: Pipeline Watcher
+#  block:
     - name: Submit a Pipeline Running Status
       operator_sdk.util.k8s_status:
         api_version: cicd.kemo.dev/v1alpha1
