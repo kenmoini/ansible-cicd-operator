@@ -99,9 +99,11 @@
         - ansible.builtin.fail:
             msg: "The Secret '{{ credentials.name }}' in the '{{ credentials.namespace }}' namespace does not have the needed username or password/ssh_key keys"
 
-- name: Set a unique variable for a current timestamp
-  set_fact:
-    timestamp: "{{ lookup('pipe', 'date +%s') }}"
+- name: Create temporary directory to clone into
+  ansible.builtin.tempfile:
+    state: directory
+    suffix: tempclone
+  register: tempdir_1
 
 - name: Create temporary file for the SSH key
   when: secret_info.resources[0].data['ssh_key'] is defined
@@ -117,7 +119,7 @@
     dest: "{{ tempfile_1.path }}"
     mode: '0600'
   vars:
-    content: "{{ secret_info.resources[0].data['ssh_key'] | b64decode | trim  }}"
+    content: "{{ secret_info.resources[0].data['ssh_key'] | b64decode | trim }}"
 
 - name: Check permissions to the Git repo
   block:
@@ -125,7 +127,7 @@
     - name: Connect to the git repo
       ansible.builtin.git:
         repo: "{{ url }}"
-        dest: "/tmp/{{ ansible_operator_meta.name }}/checkout-test-{{ timestamp }}"
+        dest: "{{ tempdir_1.path }}"
         update: no
         clone: yes
         single_branch: yes
@@ -153,7 +155,7 @@
   always:
     - name: Clean up after the clone
       ansible.builtin.file:
-        path: "/tmp/{{ ansible_operator_meta.name }}/checkout-test-{{ timestamp }}"
+        path: "{{ tempdir_1.path }}"
         state: absent
 
     - name: Delete the temporary files
