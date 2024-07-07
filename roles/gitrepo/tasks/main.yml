@@ -8,10 +8,13 @@
         that:
           - url is defined
           - branch is defined
-          - credentials is defined
-          - credentials.name is defined
-          - credentials.namespace is defined
-        fail_msg: "One or more of the required variables are not defined:{{ ' url' if not url is defined else '' }}{{ ' branch' if not branch is defined else '' }}{{ ' credentials.name' if not credentials.name is defined else '' }}{{ ' credentials.namespace' if not credentials.namespace is defined else '' }}"
+          #- credentials is defined
+          #- credentials.name is defined
+          #- credentials.namespace is defined
+        fail_msg: |
+          "One or more of the required variables are not defined:
+          {{ ' url' if not url is defined else '' }}
+          {{ ' branch' if not branch is defined else '' }}
         success_msg: "All the required variables are defined"
 
   rescue:
@@ -25,81 +28,90 @@
         - type: Succeeded
           status: "False"
           reason: GitRepoConfigError
-          message: "One or more of the required variables are not defined:{{ ' url' if not url is defined else '' }}{{ ' branch' if not branch is defined else '' }}{{ ' credentials.name' if not credentials.name is defined else '' }}{{ ' credentials.namespace' if not credentials.namespace is defined else '' }}"
+          message: |
+            One or more of the required variables are not defined:
+            {{ ' url' if not url is defined else '' }}
+            {{ ' branch' if not branch is defined else '' }}
           lastTransitionTime: "{{ lookup('pipe', 'date --rfc-3339 seconds') }}"
     - ansible.builtin.fail:
         msg: "One or more of the required variables are not defined:{{ ' url' if not url is defined else '' }}{{ ' branch' if not branch is defined else '' }}{{ ' credentials.name' if not credentials.name is defined else '' }}{{ ' credentials.namespace' if not credentials.namespace is defined else '' }}"
 
-- name: Check for the Secret
+- name: Credential definition checks
+  when: credentials is defined
   block:
-    - name: Check for the existence of the secret
-      kubernetes.core.k8s_info:
-        kind: Secret
-        namespace: "{{ credentials.namespace }}"
-        name: "{{ credentials.name }}"
-      register: secret_info
 
-    - name: Fail if the Secret was not found
-      ansible.builtin.assert:
-        that:
-          - secret_info.resources | length > 0
-        fail_msg: "The Secret '{{ credentials.name }}' was not found in the '{{ credentials.namespace }}' namespace"
-        success_msg: "The Secret '{{ credentials.name }}' was found in the '{{ credentials.namespace }}' namespace"
+    - name: Check for the Secret
+      block:
+        - name: Check for the existence of the secret
+          kubernetes.core.k8s_info:
+            kind: Secret
+            namespace: "{{ credentials.namespace }}"
+            name: "{{ credentials.name }}"
+          register: secret_info
 
-  rescue:
-    - name: Failed to find the Secret
-      operator_sdk.util.k8s_status:
-        api_version: cicd.kemo.dev/v1alpha1
-        kind: GitRepo
-        name: "{{ ansible_operator_meta.name }}"
-        namespace: "{{ ansible_operator_meta.namespace }}"
-        conditions:
-        - type: Succeeded
-          status: "False"
-          reason: SecretNotFound
-          message: "The Secret '{{ credentials.name }}' was not found in the '{{ credentials.namespace }}' namespace"
-          lastTransitionTime: "{{ lookup('pipe', 'date --rfc-3339 seconds') }}"
-    - ansible.builtin.fail:
-        msg: "The Secret '{{ credentials.name }}' was not found in the '{{ credentials.namespace }}' namespace"
+        - name: Fail if the Secret was not found
+          ansible.builtin.assert:
+            that:
+              - secret_info.resources | length > 0
+            fail_msg: "The Secret '{{ credentials.name }}' was not found in the '{{ credentials.namespace }}' namespace"
+            success_msg: "The Secret '{{ credentials.name }}' was found in the '{{ credentials.namespace }}' namespace"
 
-- name: Check the Secret for the needed keys
-  block:
-  - name: Ensure the Secret has the needed keys
-    ansible.builtin.assert:
-      that:
-        - secret_info.resources[0].data is defined
-        - secret_info.resources[0].data['username'] is defined
-        - secret_info.resources[0].data['password'] is defined or secret_info.resources[0].data['ssh_key'] is defined
-      fail_msg: "The Secret '{{ credentials.name }}' in the '{{ credentials.namespace }}' namespace does not have the needed username or password/ssh_key keys"
-      success_msg: "The Secret '{{ credentials.name }}' in the '{{ credentials.namespace }}' namespace has the needed data"
+      rescue:
+        - name: Failed to find the Secret
+          operator_sdk.util.k8s_status:
+            api_version: cicd.kemo.dev/v1alpha1
+            kind: GitRepo
+            name: "{{ ansible_operator_meta.name }}"
+            namespace: "{{ ansible_operator_meta.namespace }}"
+            conditions:
+            - type: Succeeded
+              status: "False"
+              reason: SecretNotFound
+              message: "The Secret '{{ credentials.name }}' was not found in the '{{ credentials.namespace }}' namespace"
+              lastTransitionTime: "{{ lookup('pipe', 'date --rfc-3339 seconds') }}"
+        - ansible.builtin.fail:
+            msg: "The Secret '{{ credentials.name }}' was not found in the '{{ credentials.namespace }}' namespace"
 
-  rescue:
-    - name: Failed to find needed keys in the Secret
-      operator_sdk.util.k8s_status:
-        api_version: cicd.kemo.dev/v1alpha1
-        kind: GitRepo
-        name: "{{ ansible_operator_meta.name }}"
-        namespace: "{{ ansible_operator_meta.namespace }}"
-        conditions:
-        - type: Succeeded
-          status: "False"
-          reason: CredentialError
-          message: "The Secret '{{ credentials.name }}' in the '{{ credentials.namespace }}' namespace does not have the needed username or password/ssh_key keys"
-          lastTransitionTime: "{{ lookup('pipe', 'date --rfc-3339 seconds') }}"
-    - ansible.builtin.fail:
-        msg: "The Secret '{{ credentials.name }}' in the '{{ credentials.namespace }}' namespace does not have the needed username or password/ssh_key keys"
+    - name: Check the Secret for the needed keys
+      block:
+      - name: Ensure the Secret has the needed keys
+        ansible.builtin.assert:
+          that:
+            - secret_info.resources[0].data is defined
+            - secret_info.resources[0].data['username'] is defined
+            - secret_info.resources[0].data['password'] is defined or secret_info.resources[0].data['ssh_key'] is defined
+          fail_msg: "The Secret '{{ credentials.name }}' in the '{{ credentials.namespace }}' namespace does not have the needed username or password/ssh_key keys"
+          success_msg: "The Secret '{{ credentials.name }}' in the '{{ credentials.namespace }}' namespace has the needed data"
+
+      rescue:
+        - name: Failed to find needed keys in the Secret
+          operator_sdk.util.k8s_status:
+            api_version: cicd.kemo.dev/v1alpha1
+            kind: GitRepo
+            name: "{{ ansible_operator_meta.name }}"
+            namespace: "{{ ansible_operator_meta.namespace }}"
+            conditions:
+            - type: Succeeded
+              status: "False"
+              reason: CredentialError
+              message: "The Secret '{{ credentials.name }}' in the '{{ credentials.namespace }}' namespace does not have the needed username or password/ssh_key keys"
+              lastTransitionTime: "{{ lookup('pipe', 'date --rfc-3339 seconds') }}"
+        - ansible.builtin.fail:
+            msg: "The Secret '{{ credentials.name }}' in the '{{ credentials.namespace }}' namespace does not have the needed username or password/ssh_key keys"
 
 - name: Set a unique variable for a current timestamp
   set_fact:
     timestamp: "{{ lookup('pipe', 'date +%s') }}"
 
 - name: Create temporary file for the SSH key
+  when: secret_info.resources[0].data['ssh_key'] is defined
   ansible.builtin.tempfile:
     state: file
     suffix: tempkey
   register: tempfile_1
 
 - name: Write the SSH key to the temporary file
+  when: secret_info.resources[0].data['ssh_key'] is defined
   ansible.builtin.template:
     src: templates/filefiller.j2
     dest: "{{ tempfile_1.path }}"
@@ -118,7 +130,7 @@
         clone: yes
         single_branch: yes
         version: "{{ branch }}"
-        key_file: "{{ tempfile_1.path if secret_info.resources[0].data['ssh_key'] is defined else omit }}"
+        key_file: "{{ tempfile_1.path if (secret_info.resources[0].data['ssh_key'] is defined) else omit }}"
       register: git_repo_connection_test
 
   rescue:
@@ -144,6 +156,7 @@
         state: absent
 
     - name: Delete the temporary files
+      when: secret_info.resources[0].data['ssh_key'] is defined
       ansible.builtin.file:
         path: "{{ tempfile_1.path }}"
         state: absent
