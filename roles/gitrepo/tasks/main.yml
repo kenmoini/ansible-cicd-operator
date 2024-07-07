@@ -25,7 +25,7 @@
         name: "{{ ansible_operator_meta.name }}"
         namespace: "{{ ansible_operator_meta.namespace }}"
         conditions:
-        - type: Succeeded
+        - type: Validated
           status: "False"
           reason: GitRepoConfigError
           message: |
@@ -64,7 +64,7 @@
             name: "{{ ansible_operator_meta.name }}"
             namespace: "{{ ansible_operator_meta.namespace }}"
             conditions:
-            - type: Succeeded
+            - type: Validated
               status: "False"
               reason: SecretNotFound
               message: "The Secret '{{ credentials.name }}' was not found in the '{{ credentials.namespace }}' namespace"
@@ -91,7 +91,7 @@
             name: "{{ ansible_operator_meta.name }}"
             namespace: "{{ ansible_operator_meta.namespace }}"
             conditions:
-            - type: Succeeded
+            - type: Validated
               status: "False"
               reason: CredentialError
               message: "The Secret '{{ credentials.name }}' in the '{{ credentials.namespace }}' namespace does not have the needed username or password/ssh_key keys"
@@ -131,6 +131,7 @@
         single_branch: yes
         version: "{{ branch }}"
         key_file: "{{ tempfile_1.path if (secret_info.resources[0].data['ssh_key'] is defined) else omit }}"
+        ssh_opts: "-o StrictHostKeyChecking=no"
       register: git_repo_connection_test
 
   rescue:
@@ -141,7 +142,7 @@
         name: "{{ ansible_operator_meta.name }}"
         namespace: "{{ ansible_operator_meta.namespace }}"
         conditions:
-        - type: Succeeded
+        - type: Validated
           status: "False"
           reason: ConnectionError
           message: "Could not connect to the Git repo: {{ git_repo_connection_test }}"
@@ -168,7 +169,7 @@
     name: "{{ ansible_operator_meta.name }}"
     namespace: "{{ ansible_operator_meta.namespace }}"
     conditions:
-    - type: Succeeded
+    - type: Validated
       status: "True"
       reason: Connected
       message: "Successfully connected to the Git repo"
