@@ -177,7 +177,7 @@ spec:
       # The name/namespace of the GitRepo resource
       name: three-tier-source-repo
       namespace: cicd-system
-    contextDir: db
+    contextDir: k8s_manifests/mongo
     # branch can override the branch that is defined in the GitRepo CR
     branch: main
   build:
