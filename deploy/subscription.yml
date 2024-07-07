@@ -1,0 +1,14 @@
+---
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  labels:
+    operators.coreos.com/ansible-cicd-operator.openshift-operators: ''
+  name: ansible-cicd-operator
+  namespace: openshift-operators
+spec:
+  channel: latest
+  installPlanApproval: Automatic
+  name: ansible-cicd-operator
+  source: kemo-labs-catalog
+  sourceNamespace: openshift-marketplace
