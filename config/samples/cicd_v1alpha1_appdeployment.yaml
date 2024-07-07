@@ -9,30 +9,45 @@ metadata:
     app.kubernetes.io/created-by: ansible-cicd-operator
   name: appdeployment-sample
 spec:
-  source:
-    repoURL: https://github.com/kenmoini/ai-lab-recipes
-    branch: main
+  sourceRepository:
+    gitRepo:
+      # The name/namespace of the GitRepo resource
+      name: source-repo
+      namespace: cicd-system
     contextDir: convert_models
+    # branch can override the branch that is defined in the GitRepo CR
+    branch: main
+  registry:
+    # The name/namespace of the ImageRegistry resource
+    name: imageregistry-sample
+    namespace: cicd-system
+    path: kenmoini
+    # imageName is optional - will default to the AppDeployment name
+    imageName: cicd-system-apps
   build:
+    # strategy: docker or kustomize
     strategy: docker
     dockerfile: Containerfile.uisvc
-    deployment_type: Deployment # Deployment or StatefulSet
+    # deployment_type: Deployment or StatefulSet
+    deployment_type: Deployment
   # create_networking will create a Service and Route for the application
   # service will expose any port defined in the Dockerfile
   # route will create a Route for the application
-  # hostname will set the hostname for the Route - auto will use the default wildcard ingress
+  # hostname will set the hostname for the Route - if undefined will use the default wildcard ingress
   create_networking:
     service: true
     route: true
-    hostname: auto
-  registry:
-    name: imageregistry-sample # The name of the ImageRegistry resource
+    hostname: my-sample-app.com
   target:
     cluster:
       # name and labelSelector are mutually exclusive - only one should be defined
-      name: local-cluster # Must be a cluster name found in ArgoCD/RHACM
+      # name must be a cluster name found in ArgoCD/RHACM
+      name: local-cluster
       #labelSelector:
       #  matchLabels:
       #    vendor: OpenShift
     namespace: convert-models
-    repo: cicd-system-apps # The name of the GitRepo resource
+    gitRepo:
+      # The name/namepsace of the GitRepo resource to push manifests to
+      name: gitrepo-sample
+      namespace: cicd-system
