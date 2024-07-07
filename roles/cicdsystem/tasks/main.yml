@@ -1,6 +1,21 @@
 ---
 # tasks file for CICDSystem
 
+- name: Check for any existing CICDSystem CRs in the cluster - only one is allowed
+  block:
+    - name: Get the CICDSystem CRs
+      kubernetes.core.k8s_info:
+        api_version: cicd.kemo.dev/v1alpha1
+        kind: CICDSystem
+      register: cicd_system_info
+
+    - name: Fail if more than one CICDSystem CR is found
+      ansible.builtin.assert:
+        that:
+          - cicd_system_info.resources | length <= 1
+        fail_msg: "Only one CICDSystem CR is allowed in the cluster"
+        success_msg: "Only one CICDSystem CR is found in the cluster - proceeding with the deployment"
+
 - name: Deployment of the OpenShift Pipelines Operator
   when: pipelines.deploy_openshift_pipelines
   include_tasks: openshift-pipelines-deployment.yml    
