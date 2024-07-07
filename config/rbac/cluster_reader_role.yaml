@@ -38,6 +38,7 @@ rules:
       - clustertasks
       - pipelines
       - pipelineruns
+      - taskruns
     verbs:
       - get
       - list
