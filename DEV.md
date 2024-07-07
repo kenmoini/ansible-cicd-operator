@@ -1,5 +1,16 @@
 # Development Steps
 
+## Architecture
+
+- The Ansible CI/CD Operator is meant to provide an easy way to standardize application development and deployment across Kubernetes environments.
+- It leverages technologies such as OpenShift Pipelines (Tekton), Ansible Automation Platform 2, OpenShift Gitops (ArgoCD), and Red Hat Advanced Cluster Management to build and deploy applications across a hybrid cloud.
+- Upon installing the Operator, you can configure a CICDSystem.  This Custom Resource will control the deployment and integration of the various systems.
+- Once the CICDSystem is created, you can then configure a GitRepo CR.  This is where deployment manifests will be created after the applications are built and what is synced to various clusters by ArgoCD/RHACM.
+- You will also need an ImageRegistry CR.  This will house the authentication details for an image registry where container images are stored.
+- An AppDeployment CR will define what application is built, how it is built, which GitRepo and ImageRegistry CRs to leverage, and what clusters to deploy the application to.
+
+## Getting Started
+
 > Note: Ansible Operator development is only supported on Linux
 
 - Install the Operator SDK and other prerequisites: https://sdk.operatorframework.io/docs/building-operators/ansible/installation/
@@ -31,16 +42,33 @@
 
 ## In-cluster testing
 
-- Build and push the operator image: `make podman-build podman-push IMG=quay.io/kenmoini/cicd-operator:v0.0.1`
-- Deploy the operator to the cluster `make deploy IMG=quay.io/kenmoini/cicd-operator:v0.0.1`
+Testing the operator in an active cluster is helpful to make sure all RBAC is in place and that your shell hasn't been passing environmental variables that wouldn't be present otherwise.
+
+- Modify the `Makefile` to point to a valid image registry repository
+- Build and push the operator image: `make podman-build podman-push`
+- Deploy the operator to the cluster `make deploy`
 - Create CRDs and do testing
 - Clean up with `make undeploy`
 
-## Architecture
+## Creating the distributable Operator
 
-- The Ansible CI/CD Operator is meant to provide an easy way to standardize application development and deployment across Kubernetes environments.
-- It leverages technologies such as OpenShift Pipelines (Tekton), Ansible Automation Platform 2, OpenShift Gitops (ArgoCD), and Red Hat Advanced Cluster Management to build and deploy applications across a hybrid cloud.
-- Upon installing the Operator, you can configure a CICDSystem.  This Custom Resource will control the deployment and integration of the various systems.
-- Once the CICDSystem is created, you can then configure a GitRepo CR.  This is where deployment manifests will be created after the applications are built and what is synced to various clusters by ArgoCD/RHACM.
-- You will also need an ImageRegistry CR.  This will house the authentication details for an image registry where container images are stored.
-- An AppDeployment CR will define what application is built, how it is built, which GitRepo and ImageRegistry CRs to leverage, and what clusters to deploy the application to.
+- Ensure any instances have been deleted from testing and that the operator CRDs have been uninstalled `make uninstall` or `make undeploy` if you were running in-cluster tests
+- Make sure to edit the `Makefile` to point to the proper repositories
+- Build a fresh version of the operator: `make podman-build podman-push`
+- Run `make bundle` and answer the prompts
+- Build and push the bundle image: `make bundle-build bundle-push`
+- Optionally add an image to the generated ClusterServiceVersion in the `config/manifests/base` directory under `.spec.icon`
+- Validate the bundle: `make bundle-validate`
+- Build the catalog: `make catalog-build catalog-push`
+- Deploy the CatalogSource: `oc apply -f deploy/catalogsource.yml`
+- Observe the Operator available in the OperatorHub
+- Create the Subscription to create the Operator deployment `oc apply -f deploy/subscription.yml`
+
+## Upgrading an Operator/Bundle/Catalog
+
+- Bump the `VERSION` in the `Makefile`
+- Run `make podman-build podman-push`
+- Run `make bundle bundle-build bundle-push`
+- Run `make catalog-build catalog-push`
+- Update the version tag in the `deploy/catalogsource.yml` file
+- Deploy the updated CatalogSource: `oc apply -f deploy/catalogsource.yml`
