@@ -140,7 +140,7 @@ spec:
               buildah --storage-driver=$(params.STORAGE_DRIVER) tag $(params.IMAGE):$(params.IMAGE_TAG) $imageMT
               buildah --storage-driver=$(params.STORAGE_DRIVER) push \
                 $(params.PUSH_EXTRA_ARGS) --tls-verify=$(params.TLSVERIFY) \
-                docker://${imageMT}
+                ${imageMT}
             done
           fi
         fi
