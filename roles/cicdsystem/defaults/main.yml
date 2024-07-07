@@ -3,6 +3,7 @@
 pipelines:
   deploy_openshift_pipelines: true
   openshift_pipelines_channel: stable
+  create_templates: true
 
 cd:
   rhacm:
