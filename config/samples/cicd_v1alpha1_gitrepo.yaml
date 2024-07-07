@@ -29,3 +29,17 @@ metadata:
 spec:
   branch: main
   url: 'https://github.com/kenmoini/ai-lab-recipes'
+---
+apiVersion: cicd.kemo.dev/v1alpha1
+kind: GitRepo
+metadata:
+  labels:
+    app.kubernetes.io/name: gitrepo
+    app.kubernetes.io/instance: three-tier-source-repo
+    app.kubernetes.io/part-of: ansible-cicd-operator
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: ansible-cicd-operator
+  name: three-tier-source-repo
+spec:
+  branch: main
+  url: 'https://github.com/kenmoini/sample-3-tier-app'

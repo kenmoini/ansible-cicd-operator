@@ -1,7 +1,7 @@
 ---
 
 - name: Pipelines for Dockerbuild strategy
-  when: _cicd_kemo_dev_appdeployment_spec.build.strategy == "docker"
+  when: (_cicd_kemo_dev_appdeployment_spec.build.strategy | lower) == "docker"
   block:
     - name: Create the Pipeline for a Dockerfile build
       kubernetes.core.k8s:
@@ -14,6 +14,23 @@
         state: present
       register: created_pipelinerun
 
+# Not needed since the ArgoCD Application{Set}/RHACM Application can just point to the source repo...
+#- name: Pipelines for Kustomize strategy
+#  when: (_cicd_kemo_dev_appdeployment_spec.build.strategy | lower) == "kustomize"
+#  block:
+#    - name: Create the Pipeline for a Kustomization deploymetn
+#      kubernetes.core.k8s:
+#        definition: "{{ lookup('template', 'kustomize-pipeline.yaml.j2') }}"
+#        state: present
+#
+#    - name: Create the PipelineRun for a Kustomization deployment
+#      kubernetes.core.k8s:
+#        definition: "{{ lookup('template', 'kustomize-pipelinerun.yaml.j2') }}"
+#        state: present
+#      register: created_pipelinerun
+
+- name: Pipeline Watcher
+  block:
     - name: Submit a Pipeline Running Status
       operator_sdk.util.k8s_status:
         api_version: cicd.kemo.dev/v1alpha1

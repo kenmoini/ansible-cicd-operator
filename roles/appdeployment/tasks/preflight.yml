@@ -10,17 +10,10 @@
         - _cicd_kemo_dev_appdeployment_spec.sourceRepository.gitRepo is defined
         - _cicd_kemo_dev_appdeployment_spec.sourceRepository.gitRepo.name is defined
         - _cicd_kemo_dev_appdeployment_spec.sourceRepository.gitRepo.namespace is defined
-        - _cicd_kemo_dev_appdeployment_spec.registry is defined
-        - _cicd_kemo_dev_appdeployment_spec.registry.name is defined
-        - _cicd_kemo_dev_appdeployment_spec.registry.namespace is defined
         - _cicd_kemo_dev_appdeployment_spec.build is defined
         - _cicd_kemo_dev_appdeployment_spec.build.strategy is defined
-        - _cicd_kemo_dev_appdeployment_spec.build.deployment_type is defined
-        - _cicd_kemo_dev_appdeployment_spec.create_networking is defined
-        - _cicd_kemo_dev_appdeployment_spec.create_networking.service is defined
-        - _cicd_kemo_dev_appdeployment_spec.create_networking.route is defined
-        - _cicd_kemo_dev_appdeployment_spec.create_networking.hostname is defined
         - _cicd_kemo_dev_appdeployment_spec.target is defined
+        - _cicd_kemo_dev_appdeployment_spec.target.cluster is defined
         - _cicd_kemo_dev_appdeployment_spec.target.gitRepo is defined
         - _cicd_kemo_dev_appdeployment_spec.target.gitRepo.name is defined
         - _cicd_kemo_dev_appdeployment_spec.target.gitRepo.namespace is defined
@@ -31,17 +24,10 @@
         {{- ' sourceRepository.gitRepo' if not _cicd_kemo_dev_appdeployment_spec.sourceRepository.gitRepo is defined else '' }}
         {{- ' sourceRepository.gitRepo.name' if not _cicd_kemo_dev_appdeployment_spec.sourceRepository.gitRepo.name is defined else '' }}
         {{- ' sourceRepository.gitRepo.namespace' if not _cicd_kemo_dev_appdeployment_spec.sourceRepository.gitRepo.namespace is defined else '' }}
-        {{- ' registry' if not _cicd_kemo_dev_appdeployment_spec.registry is defined else '' }}
-        {{- ' registry.name' if not _cicd_kemo_dev_appdeployment_spec.registry.name is defined else '' }}
-        {{- ' registry.namespace' if not _cicd_kemo_dev_appdeployment_spec.registry.namespace is defined else '' }}
         {{- ' build' if not _cicd_kemo_dev_appdeployment_spec.build is defined else '' }}
         {{- ' build.strategy' if not _cicd_kemo_dev_appdeployment_spec.build.strategy is defined else '' }}
-        {{- ' build.deployment_type' if not _cicd_kemo_dev_appdeployment_spec.build.deployment_type is defined else '' }}
-        {{- ' create_networking' if not _cicd_kemo_dev_appdeployment_spec.create_networking is defined else '' }}
-        {{- ' create_networking.service' if not _cicd_kemo_dev_appdeployment_spec.create_networking.service is defined else '' }}
-        {{- ' create_networking.route' if not _cicd_kemo_dev_appdeployment_spec.create_networking.route is defined else '' }}
-        {{- ' create_networking.hostname' if not _cicd_kemo_dev_appdeployment_spec.create_networking.hostname is defined else '' }}
         {{- ' target' if not _cicd_kemo_dev_appdeployment_spec.target is defined else '' }}
+        {{- ' target.cluster' if not _cicd_kemo_dev_appdeployment_spec.target.cluster is defined else '' }}
         {{- ' target.gitRepo' if not _cicd_kemo_dev_appdeployment_spec.target.gitRepo is defined else '' }}
         {{- ' target.gitRepo.name' if not _cicd_kemo_dev_appdeployment_spec.target.gitRepo.name is defined else '' }}
         {{- ' target.gitRepo.namespace' if not _cicd_kemo_dev_appdeployment_spec.target.gitRepo.namespace is defined else '' }}
@@ -94,6 +80,7 @@
       lastTransitionTime: "{{ lookup('pipe', 'date --rfc-3339 seconds') }}"
 
 - name: Check for the Image Registry CR
+  when: _cicd_kemo_dev_appdeployment_spec.registry is defined
   block:
     - name: Get the specified Image Registry CR
       kubernetes.core.k8s_info:
@@ -127,6 +114,7 @@
         msg: "The specified Image Registry CR with the name {{ _cicd_kemo_dev_appdeployment_spec.registry.name }} is not found in the namepsace {{ _cicd_kemo_dev_appdeployment_spec.registry.namespace }}"
 
 - name: Pass a successful status if the Image Registry CR is found
+  when: _cicd_kemo_dev_appdeployment_spec.registry is defined
   operator_sdk.util.k8s_status:
     api_version: cicd.kemo.dev/v1alpha1
     kind: AppDeployment

@@ -24,6 +24,7 @@
   register: source_gitrepo_secret_info
 
 - name: Get the defined ImageRegistry CR
+  when: _cicd_kemo_dev_appdeployment_spec.registry is defined
   kubernetes.core.k8s_info:
     api_version: cicd.kemo.dev/v1alpha1
     kind: ImageRegistry
@@ -32,6 +33,7 @@
   register: image_registry_info
 
 - name: Get the ImageRegistry Secret
+  when: _cicd_kemo_dev_appdeployment_spec.registry is defined
   kubernetes.core.k8s_info:
     api_version: v1
     kind: Secret

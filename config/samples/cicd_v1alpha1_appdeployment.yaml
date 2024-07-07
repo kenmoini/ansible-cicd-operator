@@ -52,3 +52,148 @@ spec:
       # The name/namepsace of the GitRepo resource to push manifests to
       name: gitrepo-sample
       namespace: cicd-system
+---
+apiVersion: cicd.kemo.dev/v1alpha1
+kind: AppDeployment
+metadata:
+  labels:
+    app.kubernetes.io/name: appdeployment
+    app.kubernetes.io/instance: three-tier-frontend
+    app.kubernetes.io/part-of: ansible-cicd-operator
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: ansible-cicd-operator
+  name: three-tier-frontend
+spec:
+  sourceRepository:
+    gitRepo:
+      # The name/namespace of the GitRepo resource
+      name: three-tier-source-repo
+      namespace: cicd-system
+    contextDir: frontend
+    # branch can override the branch that is defined in the GitRepo CR
+    branch: main
+  registry:
+    # The name/namespace of the ImageRegistry resource
+    name: imageregistry-sample
+    namespace: cicd-system
+    path: kenmoini
+    # imageName is optional - will default to the AppDeployment name
+    imageName: acicdo-three-tier-frontend
+  build:
+    # strategy: docker or kustomize
+    strategy: docker
+    dockerfile: Dockerfile
+    # deployment_type: Deployment or StatefulSet
+    deployment_type: Deployment
+  # create_networking will create a Service and Route for the application
+  # service will expose any port defined in the Dockerfile
+  # route will create a Route for the application
+  # hostname will set the hostname for the Route - if undefined will use the default wildcard ingress
+  create_networking:
+    service: true
+    route: true
+  target:
+    cluster:
+      # name and labelSelector are mutually exclusive - only one should be defined
+      # name must be a cluster name found in ArgoCD/RHACM
+      name: local-cluster
+      # if a labelSelector is used an ApplicationSet will be generated instead of an Application
+      #labelSelector:
+      #  matchLabels:
+      #    vendor: OpenShift
+    namespace: three-tier-app
+    gitRepo:
+      # The name/namepsace of the GitRepo resource to push manifests to
+      name: gitrepo-sample
+      namespace: cicd-system
+---
+apiVersion: cicd.kemo.dev/v1alpha1
+kind: AppDeployment
+metadata:
+  labels:
+    app.kubernetes.io/name: appdeployment
+    app.kubernetes.io/instance: three-tier-backend
+    app.kubernetes.io/part-of: ansible-cicd-operator
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: ansible-cicd-operator
+  name: three-tier-backend
+spec:
+  sourceRepository:
+    gitRepo:
+      # The name/namespace of the GitRepo resource
+      name: three-tier-source-repo
+      namespace: cicd-system
+    contextDir: backend
+    # branch can override the branch that is defined in the GitRepo CR
+    branch: main
+  registry:
+    # The name/namespace of the ImageRegistry resource
+    name: imageregistry-sample
+    namespace: cicd-system
+    path: kenmoini
+    # imageName is optional - will default to the AppDeployment name
+    imageName: acicdo-three-tier-backend
+  build:
+    # strategy: docker or kustomize
+    strategy: docker
+    dockerfile: Dockerfile
+    # deployment_type: Deployment or StatefulSet
+    deployment_type: StatefulSet
+  # create_networking will create a Service and Route for the application
+  # service will expose any port defined in the Dockerfile
+  # route will create a Route for the application
+  # hostname will set the hostname for the Route - if undefined will use the default wildcard ingress
+  create_networking:
+    service: true
+    route: false
+  target:
+    cluster:
+      # name and labelSelector are mutually exclusive - only one should be defined
+      # name must be a cluster name found in ArgoCD/RHACM
+      name: local-cluster
+      # if a labelSelector is used an ApplicationSet will be generated instead of an Application
+      #labelSelector:
+      #  matchLabels:
+      #    vendor: OpenShift
+    namespace: three-tier-app
+    gitRepo:
+      # The name/namepsace of the GitRepo resource to push manifests to
+      name: gitrepo-sample
+      namespace: cicd-system
+---
+apiVersion: cicd.kemo.dev/v1alpha1
+kind: AppDeployment
+metadata:
+  labels:
+    app.kubernetes.io/name: appdeployment
+    app.kubernetes.io/instance: three-tier-db
+    app.kubernetes.io/part-of: ansible-cicd-operator
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: ansible-cicd-operator
+  name: three-tier-db
+spec:
+  sourceRepository:
+    gitRepo:
+      # The name/namespace of the GitRepo resource
+      name: three-tier-source-repo
+      namespace: cicd-system
+    contextDir: db
+    # branch can override the branch that is defined in the GitRepo CR
+    branch: main
+  build:
+    # strategy: docker or kustomize
+    strategy: kustomize
+  target:
+    cluster:
+      # name and labelSelector are mutually exclusive - only one should be defined
+      # name must be a cluster name found in ArgoCD/RHACM
+      name: local-cluster
+      # if a labelSelector is used an ApplicationSet will be generated instead of an Application
+      #labelSelector:
+      #  matchLabels:
+      #    vendor: OpenShift
+    namespace: three-tier-app
+    gitRepo:
+      # The name/namepsace of the GitRepo resource to push manifests to
+      name: gitrepo-sample
+      namespace: cicd-system
