@@ -36,6 +36,7 @@
 - Log into an OpenShift cluster with the CLI
 - Test the operator so far by running it outside the cluster with `make install run`
 - You may uninstall the operator after testing by running `make uninstall` - make sure to delete any created CICDSystem, ImageRegistry, GitRepo, and AppDeployment CRs first!
+- Repeat for other Custom Resources such as ImageRegistry, GitRepo, and AppDeployment
 
 - Create a test namespace: `oc new-project cicd-system`
 - Create the CICDSystem defined in `oc apply -f config/samples/cicd_v1alpha1_cicdsystem.yaml`
