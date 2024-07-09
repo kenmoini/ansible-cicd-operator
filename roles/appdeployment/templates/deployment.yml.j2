@@ -3,7 +3,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ ansible_operator_meta.name }}
-  #namespace: {{ _cicd_kemo_dev_appdeployment_spec.target.namespace }}
+  namespace: {{ _cicd_kemo_dev_appdeployment_spec.target.namespace }}
   annotations:
     argocd.argoproj.io/sync-wave: "5"
 spec:
