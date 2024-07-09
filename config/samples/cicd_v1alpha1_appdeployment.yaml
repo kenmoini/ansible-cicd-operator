@@ -107,10 +107,10 @@ spec:
             path: "/spec/template/spec/containers/0/env/-"
             value:
               name: REACT_APP_BACKEND_URL
-              value: 'https://three-tier-backend-three-tier-app.apps.mega-sno.v60.lab.kemo.network/api/tasks'
+              value: 'https://three-tier-backend-three-tier-backend.apps.mega-sno.v60.lab.kemo.network/api/tasks'
         target:
           kind: Deployment
-          namespace: three-tier-app
+          namespace: three-tier-frontend
           name: three-tier-frontend
   # create_networking will create a Service and Route for the application
   create_networking:
@@ -131,7 +131,7 @@ spec:
       #  matchLabels:
       #    vendor: OpenShift
     # namespace is the namespace to deploy the application to on the target cluster
-    namespace: three-tier-app
+    namespace: three-tier-frontend
     # gitRepo is the name/namespace of the GitRepo resource to push manifests to
     gitRepo:
       # The name/namepsace of the GitRepo resource to push manifests to
@@ -184,26 +184,20 @@ spec:
             path: "/spec/template/spec/containers/0/env/-"
             value:
               name: MONGO_CONN_STR
-              value: mongodb://mongodb-svc:27017/todo?directConnection=true
+              value: mongodb://mongodb-svc.three-tier-db.svc.cluster.local:27017/todo?directConnection=true
           - op: add
             path: "/spec/template/spec/containers/0/env/-"
             value:
               name: MONGO_USERNAME
-              valueFrom:
-                secretKeyRef:
-                  name: mongo-sec
-                  key: username
+              value: admin
           - op: add
             path: "/spec/template/spec/containers/0/env/-"
             value:
               name: MONGO_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: mongo-sec
-                  key: password
+              value: admin
         target:
           kind: StatefulSet
-          namespace: three-tier-app
+          namespace: three-tier-backend
           name: three-tier-backend
   # create_networking will create a Service and Route for the application
   create_networking:
@@ -224,7 +218,7 @@ spec:
       #  matchLabels:
       #    vendor: OpenShift
     # namespace is the namespace to deploy the application to on the target cluster
-    namespace: three-tier-app
+    namespace: three-tier-backend
     # gitRepo is the name/namespace of the GitRepo resource to push manifests to
     gitRepo:
       # The name/namepsace of the GitRepo resource to push manifests to
@@ -267,7 +261,7 @@ spec:
         matchLabels:
           vendor: OpenShift
     # namespace is the namespace to deploy the application to on the target cluster
-    namespace: three-tier-app
+    namespace: three-tier-db
     # gitRepo is the name/namespace of the GitRepo resource to push manifests to
     gitRepo:
       # The name/namepsace of the GitRepo resource to push manifests to
