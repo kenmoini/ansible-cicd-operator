@@ -110,7 +110,6 @@ spec:
               value: 'https://three-tier-backend-three-tier-backend.apps.mega-sno.v60.lab.kemo.network/api/tasks'
         target:
           kind: Deployment
-          namespace: three-tier-frontend
           name: three-tier-frontend
   # create_networking will create a Service and Route for the application
   create_networking:
@@ -194,10 +193,9 @@ spec:
             path: "/spec/template/spec/containers/0/env/-"
             value:
               name: MONGO_PASSWORD
-              value: admin
+              value: password123
         target:
           kind: StatefulSet
-          namespace: three-tier-backend
           name: three-tier-backend
   # create_networking will create a Service and Route for the application
   create_networking:
