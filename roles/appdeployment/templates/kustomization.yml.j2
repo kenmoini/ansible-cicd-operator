@@ -18,7 +18,9 @@ patches:
 - target:
     kind: {{ patch.target.kind }}
     name: {{ patch.target.name }}
+{% if patch.target.namespace is defined %}
     namespace: {{ patch.target.namespace }}
+{% endif %}
   patch: |-
     {{ patch.patch | indent( width=4, first=False) }}
 {% endfor %}
